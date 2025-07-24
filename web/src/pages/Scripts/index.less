@@ -1,0 +1,189 @@
+// 脚本管理页面样式
+
+.scriptsContainer {
+  .ant-pro-table-list-toolbar-title {
+    font-weight: 600;
+  }
+
+  // 表格行悬停效果
+  .ant-table-tbody > tr:hover > td {
+    background-color: rgba(24, 144, 255, 0.04) !important;
+  }
+
+  // 操作按钮样式优化
+  .ant-btn-text {
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.04);
+    }
+  }
+
+  // 状态开关样式
+  .ant-switch {
+    &.ant-switch-checked {
+      background-color: #52c41a;
+    }
+  }
+
+  // 代码显示区域
+  .codePreview {
+    background: #f6f8fa;
+    border: 1px solid #e1e4e8;
+    border-radius: 6px;
+    padding: 16px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    font-size: 14px;
+    line-height: 1.45;
+    overflow: auto;
+    max-height: 400px;
+
+    // 暗色主题适配
+    [data-theme='dark'] & {
+      background: #161b22;
+      border-color: #30363d;
+      color: #e6edf3;
+    }
+  }
+
+  // 表单样式优化
+  .ant-form-item-label > label {
+    font-weight: 500;
+  }
+
+  // 工具栏按钮间距
+  .ant-pro-table-list-toolbar-right {
+    .ant-btn + .ant-btn {
+      margin-left: 8px;
+    }
+  }
+
+  // 搜索表单样式
+  .ant-pro-table-search {
+    .ant-form-item {
+      margin-bottom: 16px;
+    }
+  }
+
+  // 分页器样式
+  .ant-pagination {
+    margin-top: 16px;
+    text-align: right;
+  }
+
+  // 空状态样式
+  .ant-empty {
+    margin: 40px 0;
+  }
+
+  // 标签样式
+  .ant-tag {
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 20px;
+    padding: 0 8px;
+  }
+
+  // 工具提示样式
+  .ant-tooltip {
+    .ant-tooltip-inner {
+      font-size: 12px;
+    }
+  }
+
+  // 弹窗样式优化
+  .ant-modal {
+    .ant-modal-header {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 16px 24px;
+
+      .ant-modal-title {
+        font-weight: 600;
+        font-size: 16px;
+      }
+    }
+
+    .ant-modal-body {
+      padding: 24px;
+    }
+
+    .ant-modal-footer {
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 16px;
+      text-align: right;
+
+      .ant-btn + .ant-btn {
+        margin-left: 8px;
+      }
+    }
+  }
+
+  // 表单项间距
+  .ant-form-item {
+    margin-bottom: 24px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // 文本域样式
+  .ant-input {
+    &[data-type="textarea"] {
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  }
+
+  // 响应式适配
+  @media (max-width: 768px) {
+    .ant-pro-table-list-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+
+      .ant-pro-table-list-toolbar-title {
+        margin-bottom: 16px;
+      }
+
+      .ant-pro-table-list-toolbar-right {
+        justify-content: flex-start;
+      }
+    }
+
+    .ant-table {
+      font-size: 12px;
+
+      .ant-table-thead > tr > th,
+      .ant-table-tbody > tr > td {
+        padding: 8px;
+      }
+    }
+
+    .ant-modal {
+      margin: 0;
+      max-width: 100vw;
+      top: 0;
+
+      .ant-modal-content {
+        border-radius: 0;
+      }
+    }
+  }
+}
+
+// 全局代码高亮样式
+.code-highlight {
+  .keyword { color: #d73a49; }
+  .string { color: #032f62; }
+  .comment { color: #6a737d; font-style: italic; }
+  .number { color: #005cc5; }
+  .operator { color: #d73a49; }
+  
+  // 暗色主题
+  [data-theme='dark'] & {
+    .keyword { color: #ff7b72; }
+    .string { color: #a5d6ff; }
+    .comment { color: #8b949e; }
+    .number { color: #79c0ff; }
+    .operator { color: #ff7b72; }
+  }
+}

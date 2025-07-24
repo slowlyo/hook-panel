@@ -26,8 +26,27 @@ export default defineConfig({
       name: '首页',
       path: '/home',
       component: './Home',
+      icon: 'HomeOutlined',
+    },
+    {
+      name: '脚本管理',
+      path: '/scripts',
+      component: './Scripts',
+      icon: 'CodeOutlined',
     },
   ],
   npmClient: 'pnpm',
+  // 代理配置
+  proxy: {
+    '/api': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+      pathRewrite: { '^/api': '/api' },
+    },
+    '/health': {
+      target: 'http://localhost:8080',
+      changeOrigin: true,
+    },
+  },
 });
 

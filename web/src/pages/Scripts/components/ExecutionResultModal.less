@@ -1,0 +1,85 @@
+.outputSection {
+  margin-top: 16px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.sectionTitle {
+  font-weight: bold;
+}
+
+.copyButton {
+  margin-left: 8px;
+}
+
+.outputContent {
+  background-color: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  font-family: Monaco, Menlo, "Ubuntu Mono", monospace;
+  font-size: 12px;
+  max-height: 200px;
+  min-height: 50px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  display: block;
+  border: 1px solid #333;
+  scroll-behavior: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a #2a2a2a;
+}
+
+// 将滚动条样式提取到外层，始终生效，避免闪烁
+.outputContent::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.outputContent::-webkit-scrollbar-track {
+  background: #2a2a2a;
+  border-radius: 4px;
+}
+
+.outputContent::-webkit-scrollbar-thumb {
+  background: #4a4a4a;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background: #5a5a5a;
+  }
+}
+
+.outputContent::-webkit-scrollbar-corner {
+  background: #2a2a2a;
+}
+
+.errorContent {
+  background-color: #2d1b1b;
+  color: #ff6b6b;
+  border: 1px solid #4a2626;
+  // 错误输出的滚动条样式（稍微偏红色调）
+  scrollbar-color: #6a4a4a #3a2a2a;
+}
+
+// 错误输出的滚动条样式，提取到外层避免闪烁
+.outputContent.errorContent::-webkit-scrollbar-track {
+  background: #3a2a2a;
+}
+
+.outputContent.errorContent::-webkit-scrollbar-thumb {
+  background: #6a4a4a;
+
+  &:hover {
+    background: #7a5a5a;
+  }
+}
+
+.outputContent.errorContent::-webkit-scrollbar-corner {
+  background: #3a2a2a;
+}

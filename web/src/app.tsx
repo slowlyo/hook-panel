@@ -1,12 +1,11 @@
 // 运行时配置
 import webhook from './assets/webhook.png';
-import { isAuthenticated, logout } from './utils/auth';
+import { isAuthenticated, getStoredAccessKey } from './utils/auth';
 import { history, RuntimeAntdConfig } from '@umijs/max';
-import { Tooltip, Space, theme } from 'antd';
-import { LogoutOutlined } from '@ant-design/icons';
+import { Space, theme, message } from 'antd';
 
 import ThemeToggle from '@/components/ThemeToggle';
-import ThemeAwareButton from '@/components/ThemeAwareButton';
+import LogoutButton from '@/components/LogoutButton';
 
 const { darkAlgorithm, defaultAlgorithm } = theme;
 const THEME_STORAGE_KEY = 'hook-panel-theme';
@@ -51,7 +50,48 @@ export const antd: RuntimeAntdConfig = (memo) => {
   return memo;
 };
 
-
+// request 运行时配置
+export const request = {
+  // 请求拦截器
+  requestInterceptors: [
+    (config: any) => {
+      // 自动添加认证头
+      const accessKey = getStoredAccessKey();
+      if (accessKey) {
+        config.headers = {
+          ...config.headers,
+          Authorization: `Bearer ${accessKey}`,
+        };
+      }
+      return config;
+    },
+  ],
+  // 响应拦截器
+  responseInterceptors: [
+    (response: any) => {
+      // 处理响应
+      if (response.status === 401) {
+        message.error('认证失败，请重新登录');
+        history.push('/auth');
+      }
+      return response;
+    },
+  ],
+  // 错误处理
+  errorConfig: {
+    errorHandler: (error: any) => {
+      if (error.response?.status === 401) {
+        message.error('认证失败，请重新登录');
+        history.push('/auth');
+      } else if (error.response?.status >= 500) {
+        message.error('服务器错误，请稍后重试');
+      } else if (error.message) {
+        message.error(error.message);
+      }
+      throw error;
+    },
+  },
+};
 
 export const layout = () => {
   return {
@@ -66,12 +106,7 @@ export const layout = () => {
       return (
         <Space style={{ marginRight: '16px' }}>
           <ThemeToggle />
-          <Tooltip title="注销">
-            <ThemeAwareButton
-              icon={<LogoutOutlined />}
-              onClick={() => logout()}
-            />
-          </Tooltip>
+          <LogoutButton />
         </Space>
       );
     },

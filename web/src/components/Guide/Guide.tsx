@@ -1,4 +1,5 @@
-import { Layout, Row, Typography } from 'antd';
+import { Layout, Row, Typography, Card, Space } from 'antd';
+import { RocketOutlined, CodeOutlined, SettingOutlined, DashboardOutlined } from '@ant-design/icons';
 import React from 'react';
 import styles from './Guide.less';
 

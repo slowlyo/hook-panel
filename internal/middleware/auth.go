@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"hook-panel/internal/pkg/auth"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -11,11 +11,8 @@ import (
 // AuthMiddleware 密钥认证中间件
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// 从环境变量获取密钥，默认值为 "your-secret-key"
-		secretKey := os.Getenv("SECRET_KEY")
-		if secretKey == "" {
-			secretKey = "your-secret-key"
-		}
+		// 获取密钥
+		secretKey := auth.GetSecretKey()
 
 		// 从 Header 中获取 Authorization
 		authHeader := c.GetHeader("Authorization")
