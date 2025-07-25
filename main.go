@@ -1,9 +1,12 @@
 package main
 
 import (
+	"embed"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
 
 	"hook-panel/internal/handlers"
@@ -13,6 +16,112 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+//go:embed web/dist/*
+var staticFiles embed.FS
+
+// setupStaticFiles 设置静态文件服务
+func setupStaticFiles(r *gin.Engine) {
+	// 获取嵌入的文件系统
+	distFS, err := fs.Sub(staticFiles, "web/dist")
+	if err != nil {
+		log.Fatal("获取静态文件系统失败:", err)
+	}
+
+	// 处理前端路由，所有非API请求都返回index.html或静态文件
+	r.NoRoute(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// 如果是API请求，返回404
+		if len(path) >= 4 && path[:4] == "/api" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
+			return
+		}
+
+		// 如果是webhook请求，返回404
+		if len(path) >= 2 && path[:2] == "/h" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook不存在"})
+			return
+		}
+
+		// 去掉开头的斜杠
+		filePath := path
+		if filePath == "/" {
+			filePath = "/index.html"
+		}
+		filePath = filePath[1:] // 去掉开头的 /
+
+		// 尝试打开静态文件
+		file, err := distFS.Open(filePath)
+		if err == nil {
+			defer file.Close()
+
+			// 设置正确的Content-Type
+			contentType := getContentType(filePath)
+			c.Header("Content-Type", contentType)
+
+			if stat, err := file.Stat(); err == nil {
+				c.DataFromReader(http.StatusOK, stat.Size(), contentType, file, nil)
+				return
+			}
+		}
+
+		// 如果文件不存在，返回index.html（SPA路由）
+		indexFile, err := distFS.Open("index.html")
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "页面加载失败"})
+			return
+		}
+		defer indexFile.Close()
+
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		if stat, err := indexFile.Stat(); err == nil {
+			c.DataFromReader(http.StatusOK, stat.Size(), "text/html; charset=utf-8", indexFile, nil)
+		}
+	})
+}
+
+// getContentType 根据文件扩展名返回Content-Type
+func getContentType(filePath string) string {
+	if len(filePath) == 0 {
+		return "text/html; charset=utf-8"
+	}
+
+	// 获取文件扩展名
+	ext := ""
+	for i := len(filePath) - 1; i >= 0; i-- {
+		if filePath[i] == '.' {
+			ext = filePath[i:]
+			break
+		}
+		if filePath[i] == '/' {
+			break
+		}
+	}
+
+	switch ext {
+	case ".html":
+		return "text/html; charset=utf-8"
+	case ".css":
+		return "text/css; charset=utf-8"
+	case ".js":
+		return "application/javascript; charset=utf-8"
+	case ".json":
+		return "application/json; charset=utf-8"
+	case ".png":
+		return "image/png"
+	case ".jpg", ".jpeg":
+		return "image/jpeg"
+	case ".gif":
+		return "image/gif"
+	case ".svg":
+		return "image/svg+xml"
+	case ".ico":
+		return "image/x-icon"
+	default:
+		return "application/octet-stream"
+	}
+}
 
 func main() {
 	// 解析命令行参数
@@ -55,6 +164,9 @@ func main() {
 	// 添加基础中间件
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+
+	// 设置静态文件服务
+	setupStaticFiles(r)
 
 	// 健康检查接口（无需认证）
 	r.GET("/health", handlers.HealthCheck)

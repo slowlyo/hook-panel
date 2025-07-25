@@ -16,6 +16,9 @@ export default defineConfig({
   layout: {
     title: 'Hook Panel',
   },
+  history:{
+    type: 'hash'
+  },
   routes: [
     {
       path: '/',
