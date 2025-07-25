@@ -1,0 +1,216 @@
+name: 🚀 Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 当推送以 v 开头的标签时触发，如 v1.0.0
+
+env:
+  GO_VERSION: '1.23'
+  NODE_VERSION: '18'
+
+jobs:
+  build-and-release:
+    name: 🏗️ Build and Release
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. 检出代码
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. 设置 Go 环境
+      - name: 🐹 Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      # 3. 设置 Node.js 环境
+      - name: 📦 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # 4. 设置 pnpm
+      - name: 📦 Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # 5. 缓存 Go 模块
+      - name: 💾 Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # 6. 缓存 Node.js 依赖
+      - name: 💾 Cache Node.js dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            web/node_modules
+            ~/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('web/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+
+      # 7. 安装前端依赖
+      - name: 📦 Install frontend dependencies
+        working-directory: ./web
+        run: pnpm install --frozen-lockfile
+
+      # 8. 构建前端项目
+      - name: 🏗️ Build frontend
+        working-directory: ./web
+        run: pnpm build
+
+      # 9. 验证前端构建产物
+      - name: ✅ Verify frontend build
+        run: |
+          if [ ! -d "web/dist" ]; then
+            echo "❌ Frontend build failed: web/dist directory not found"
+            exit 1
+          fi
+          if [ ! -f "web/dist/index.html" ]; then
+            echo "❌ Frontend build failed: index.html not found"
+            exit 1
+          fi
+          echo "✅ Frontend build successful"
+          ls -la web/dist/
+
+      # 10. 下载 Go 依赖
+      - name: 📦 Download Go dependencies
+        run: go mod download
+
+      # 11. 构建多架构二进制文件
+      - name: 🏗️ Build binaries
+        run: |
+          # 创建构建目录
+          mkdir -p build
+          
+          # 定义构建目标
+          targets=(
+            "linux/amd64"
+            "linux/arm64"
+            "windows/amd64"
+            "darwin/amd64"
+            "darwin/arm64"
+          )
+          
+          # 构建每个目标
+          for target in "${targets[@]}"; do
+            IFS='/' read -r GOOS GOARCH <<< "$target"
+            
+            echo "🔨 Building for $GOOS/$GOARCH..."
+            
+            # 设置输出文件名
+            output_name="hook-panel"
+            if [ "$GOOS" = "windows" ]; then
+              output_name="hook-panel.exe"
+            fi
+            
+            # 构建二进制文件
+            CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build \
+              -ldflags="-s -w -X main.version=${{ github.ref_name }}" \
+              -o "build/${output_name}" \
+              main.go
+            
+            # 创建压缩包
+            cd build
+            if [ "$GOOS" = "windows" ]; then
+              # Windows 使用 zip 格式
+              zip -9 "hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip" "$output_name"
+              echo "✅ Created hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip"
+            else
+              # 其他系统使用 tar.gz 格式
+              tar -czf "hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz" "$output_name"
+              echo "✅ Created hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz"
+            fi
+            
+            # 清理二进制文件，保留压缩包
+            rm "$output_name"
+            cd ..
+          done
+          
+          echo "🎉 All builds completed!"
+          ls -la build/
+
+      # 12. 生成校验和文件
+      - name: 🔐 Generate checksums
+        run: |
+          cd build
+          sha256sum * > checksums.txt
+          echo "📋 Generated checksums:"
+          cat checksums.txt
+
+      # 13. 创建 Release 说明
+      - name: 📝 Generate release notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## 🚀 Hook Panel ${{ github.ref_name }}
+          
+          ### 📦 支持的架构
+          
+          - **Linux AMD64** (x86_64) - 适用于大多数 Linux 服务器
+          - **Linux ARM64** - 适用于 ARM64 架构的 Linux 服务器
+          - **Windows AMD64** - 适用于 Windows 系统
+          - **macOS Intel** - 适用于 Intel 芯片的 macOS
+          - **macOS Apple Silicon** - 适用于 M1/M2 芯片的 macOS
+          
+          ### 🔧 使用方法
+          
+          1. 下载对应架构的压缩包
+          2. 解压缩文件
+          3. 运行二进制文件：
+             ```bash
+             # Linux/macOS
+             ./hook-panel
+             
+             # Windows
+             hook-panel.exe
+             ```
+          
+          ### ✨ 特性
+          
+          - 🎯 轻量级 Webhook 脚本管理平台
+          - 🔐 安全的密钥认证机制
+          - 📊 实时仪表板和统计信息
+          - 📝 脚本执行日志记录
+          - 🌐 现代化的 Web 界面
+          - 📱 响应式设计，支持移动端
+          
+          ### 🔍 校验和
+          
+          请使用 `checksums.txt` 文件验证下载文件的完整性。
+          EOF
+
+      # 14. 创建 GitHub Release
+      - name: 🎉 Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Hook Panel ${{ github.ref_name }}"
+          body_path: release_notes.md
+          files: |
+            build/*.tar.gz
+            build/*.zip
+            build/checksums.txt
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 15. 清理构建产物
+      - name: 🧹 Cleanup
+        if: always()
+        run: |
+          rm -rf build/
+          rm -f release_notes.md
+          echo "✅ Cleanup completed"
