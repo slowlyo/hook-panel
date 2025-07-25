@@ -123,3 +123,20 @@ func DeleteScriptLog(scriptID string) error {
 
 	return nil
 }
+
+// ClearScriptLog 清空脚本日志文件
+func ClearScriptLog(scriptID string) error {
+	logPath := filepath.Join(LogsDir, scriptID+".log")
+
+	// 检查文件是否存在
+	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+		return nil // 文件不存在，无需清空
+	}
+
+	// 清空文件内容
+	if err := os.WriteFile(logPath, []byte(""), 0644); err != nil {
+		return fmt.Errorf("清空日志文件失败: %v", err)
+	}
+
+	return nil
+}

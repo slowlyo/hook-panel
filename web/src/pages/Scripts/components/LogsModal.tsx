@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Modal, Button, Spin, message, Empty } from 'antd';
-import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
-import { getScriptLogs } from '@/services/scripts';
+import { Modal, Button, message, Popconfirm } from 'antd';
+import { ReloadOutlined, DownloadOutlined, ClearOutlined } from '@ant-design/icons';
+import { getScriptLogs, clearScriptLogs } from '@/services/scripts';
+import OutputDisplay, { OutputDisplayRef } from '@/components/OutputDisplay';
 import './LogsModal.less';
 
 interface LogsModalProps {
@@ -19,14 +20,8 @@ const LogsModal: React.FC<LogsModalProps> = ({
 }) => {
   const [logs, setLogs] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const logsContainerRef = useRef<HTMLDivElement>(null);
-
-  // 设置滚动到底部
-  const setScrollToBottom = () => {
-    if (logsContainerRef.current) {
-      logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
-    }
-  };
+  const [clearing, setClearing] = useState(false);
+  const outputDisplayRef = useRef<OutputDisplayRef>(null);
 
   // 加载日志
   const loadLogs = async () => {
@@ -36,11 +31,17 @@ const LogsModal: React.FC<LogsModalProps> = ({
     try {
       const response = await getScriptLogs(scriptId);
       setLogs(response.logs || '');
-      // 延迟设置滚动位置到底部，确保内容已渲染
-      setTimeout(setScrollToBottom, 50);
-    } catch (error) {
+    } catch (error: any) {
       console.error('获取日志失败:', error);
-      message.error('获取日志失败');
+
+      let errorMessage = '获取日志失败';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -63,6 +64,31 @@ const LogsModal: React.FC<LogsModalProps> = ({
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     message.success('日志下载成功 📥');
+  };
+
+  // 清空日志
+  const handleClearLogs = async () => {
+    if (!scriptId) return;
+
+    setClearing(true);
+    try {
+      const response = await clearScriptLogs(scriptId);
+      message.success(response.message);
+      setLogs(''); // 清空本地显示的日志
+    } catch (error: any) {
+      console.error('清空日志失败:', error);
+
+      let errorMessage = '清空日志失败';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
+    } finally {
+      setClearing(false);
+    }
   };
 
   // 当弹窗打开时加载日志
@@ -96,6 +122,25 @@ const LogsModal: React.FC<LogsModalProps> = ({
               >
                 下载
               </Button>
+              <Popconfirm
+                title="确认清空日志"
+                description="清空后无法恢复，确定要清空所有日志吗？"
+                onConfirm={handleClearLogs}
+                okText="确定"
+                cancelText="取消"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  icon={<ClearOutlined />}
+                  disabled={!logs}
+                  loading={clearing}
+                  size="small"
+                  danger
+                >
+                  清空
+                </Button>
+              </Popconfirm>
             </div>
           </div>
         }
@@ -110,26 +155,22 @@ const LogsModal: React.FC<LogsModalProps> = ({
         destroyOnHidden
         closeIcon={false}
       >
-      <div
-        ref={logsContainerRef}
-        className="logsContainer"
-      >
-        {loading ? (
-          <div className="loadingContainer">
-            <Spin size="large" />
-            <div className="loadingText">加载日志中...</div>
-          </div>
-        ) : logs ? (
-          <pre className="logsContent">
-            {logs}
-          </pre>
-        ) : (
-          <Empty
-            description="暂无执行日志"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          />
-        )}
-      </div>
+        <OutputDisplay
+          ref={outputDisplayRef}
+          content={logs}
+          loading={loading}
+          maxHeight={500}
+          minHeight={100}
+          autoScrollToBottom={true}
+          emptyDescription="暂无执行日志"
+          loadingDescription="加载日志中..."
+          className="dark-theme"
+          fontSize={12}
+          lineHeight={1.5}
+          useCodeMirror={true}
+          language="text"
+          showLineNumbers={true}
+        />
     </Modal>
   );
 };

@@ -13,17 +13,22 @@ import (
 )
 
 func main() {
+	log.Println("🚀 启动 Hook Panel...")
+
 	// 初始化密钥
+	log.Println("🔑 初始化密钥...")
 	if err := auth.InitSecretKey(); err != nil {
 		log.Fatal("密钥初始化失败:", err)
 	}
 
 	// 初始化数据库
+	log.Println("📦 初始化数据库...")
 	if err := database.InitDatabase(); err != nil {
 		log.Fatal("数据库初始化失败:", err)
 	}
 
 	// 设置 Gin 模式
+	log.Println("🌐 设置 Web 服务...")
 	gin.SetMode(gin.ReleaseMode)
 
 	// 创建路由器
@@ -54,6 +59,7 @@ func main() {
 			scripts.POST("/:id/call", handlers.IncrementCallCount) // 增加调用次数
 			scripts.POST("/:id/execute", handlers.ExecuteScript)   // 执行脚本
 			scripts.GET("/:id/logs", handlers.GetScriptLogs)       // 获取脚本日志
+			scripts.DELETE("/:id/logs", handlers.ClearScriptLogs)  // 清空脚本日志
 		}
 	}
 

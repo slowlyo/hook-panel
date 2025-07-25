@@ -5,6 +5,7 @@ export interface Script {
   id: string;
   name: string;
   description: string;
+  executor: string;
   enabled: boolean;
   call_count: number;
   last_call_at?: string;
@@ -30,6 +31,7 @@ export interface CreateScriptRequest {
   name: string;
   description?: string;
   content?: string;
+  executor: string;
   enabled?: boolean;
 }
 
@@ -38,6 +40,7 @@ export interface UpdateScriptRequest {
   name?: string;
   description?: string;
   content?: string;
+  executor?: string;
   enabled?: boolean;
 }
 
@@ -121,5 +124,12 @@ export async function executeScript(id: string) {
 export async function getScriptLogs(id: string) {
   return request<{ logs: string }>(`/api/scripts/${id}/logs`, {
     method: 'GET',
+  });
+}
+
+// 清空脚本日志
+export async function clearScriptLogs(id: string) {
+  return request<{ message: string }>(`/api/scripts/${id}/logs`, {
+    method: 'DELETE',
   });
 }

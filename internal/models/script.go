@@ -9,14 +9,15 @@ import (
 
 // Script 脚本模型
 type Script struct {
-	ID          string    `json:"id" gorm:"primaryKey;type:varchar(36)"`
-	Name        string    `json:"name" gorm:"not null;size:255" binding:"required"`
-	Description string    `json:"description" gorm:"size:1000"`
-	Enabled     bool      `json:"enabled" gorm:"default:true"`
-	CallCount   int64     `json:"call_count" gorm:"default:0"`
+	ID          string     `json:"id" gorm:"primaryKey;type:varchar(36)"`
+	Name        string     `json:"name" gorm:"not null;size:255" binding:"required"`
+	Description string     `json:"description" gorm:"size:1000"`
+	Executor    string     `json:"executor" gorm:"not null;size:20;default:bash" binding:"required"`
+	Enabled     bool       `json:"enabled" gorm:"default:true"`
+	CallCount   int64      `json:"call_count" gorm:"default:0"`
 	LastCallAt  *time.Time `json:"last_call_at"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
 }
 
 // BeforeCreate GORM 钩子，在创建前生成 UUID
@@ -37,6 +38,7 @@ type ScriptCreateRequest struct {
 	Name        string `json:"name" binding:"required"`
 	Description string `json:"description"`
 	Content     string `json:"content"`
+	Executor    string `json:"executor" binding:"required,oneof=bash sh python python3 node php ruby perl go java powershell cmd"`
 	Enabled     bool   `json:"enabled"`
 }
 
@@ -45,6 +47,7 @@ type ScriptUpdateRequest struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	Content     string `json:"content"`
+	Executor    string `json:"executor" binding:"omitempty,oneof=bash sh python python3 node php ruby perl go java powershell cmd"`
 	Enabled     *bool  `json:"enabled"`
 }
 

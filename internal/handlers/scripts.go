@@ -35,6 +35,9 @@ func GetScripts(c *gin.Context) {
 	// 状态筛选参数
 	enabledParam := c.Query("enabled")
 
+	// 执行器筛选参数
+	executorParam := c.Query("executor")
+
 	// 排序参数
 	sortField := c.DefaultQuery("sort_field", "created_at")
 	sortOrder := c.DefaultQuery("sort_order", "desc")
@@ -52,6 +55,11 @@ func GetScripts(c *gin.Context) {
 		} else if enabledParam == "false" {
 			query = query.Where("enabled = ?", false)
 		}
+	}
+
+	// 添加执行器筛选
+	if executorParam != "" {
+		query = query.Where("executor = ?", executorParam)
 	}
 
 	// 获取总数
@@ -134,6 +142,7 @@ func CreateScript(c *gin.Context) {
 	script := models.Script{
 		Name:        req.Name,
 		Description: req.Description,
+		Executor:    req.Executor,
 		Enabled:     req.Enabled,
 	}
 
@@ -198,6 +207,9 @@ func UpdateScript(c *gin.Context) {
 	if req.Description != "" {
 		updates["description"] = req.Description
 	}
+	if req.Executor != "" {
+		updates["executor"] = req.Executor
+	}
 	if req.Enabled != nil {
 		updates["enabled"] = *req.Enabled
 	}
@@ -255,6 +267,12 @@ func DeleteScript(c *gin.Context) {
 
 	// 删除脚本内容文件
 	if err := file.DeleteScriptContent(scriptID); err != nil {
+		// 记录错误但不影响响应
+		// 可以考虑添加日志记录
+	}
+
+	// 删除脚本日志文件
+	if err := file.DeleteScriptLog(scriptID); err != nil {
 		// 记录错误但不影响响应
 		// 可以考虑添加日志记录
 	}
@@ -388,7 +406,7 @@ func ExecuteScript(c *gin.Context) {
 
 	// 创建执行器并执行脚本
 	scriptExecutor := executor.NewScriptExecutor(60 * time.Second) // 60秒超时
-	result, err := scriptExecutor.ExecuteScript(scriptID, content)
+	result, err := scriptExecutor.ExecuteScript(scriptID, content, script.Executor)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "脚本执行失败: " + err.Error(),
@@ -443,6 +461,39 @@ func GetScriptLogs(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"logs": logs,
+	})
+}
+
+// ClearScriptLogs 清空脚本执行日志
+func ClearScriptLogs(c *gin.Context) {
+	scriptID := c.Param("id")
+	if scriptID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "脚本 ID 不能为空",
+		})
+		return
+	}
+
+	// 检查脚本是否存在
+	db := database.GetDB()
+	var script models.Script
+	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "脚本不存在",
+		})
+		return
+	}
+
+	// 清空日志文件
+	if err := file.ClearScriptLog(scriptID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "清空日志失败",
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "日志清空成功 🧹",
 	})
 }
 

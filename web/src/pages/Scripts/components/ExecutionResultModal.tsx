@@ -2,6 +2,7 @@ import React from 'react';
 import { Modal, Result, Descriptions, Tag, Button, message } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, CopyOutlined } from '@ant-design/icons';
 import { ExecutionResult } from '@/services/scripts';
+import OutputDisplay from '@/components/OutputDisplay';
 import './ExecutionResultModal.less';
 
 interface ExecutionResultModalProps {
@@ -92,9 +93,19 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               复制
             </Button>
           </div>
-          <div className="outputContent">
-            {result.output}
-          </div>
+          <OutputDisplay
+            content={result.output}
+            maxHeight={200}
+            minHeight={50}
+            autoScrollToBottom={false}
+            emptyDescription="无输出内容"
+            className="dark-theme"
+            fontSize={12}
+            lineHeight={1.4}
+            useCodeMirror={true}
+            language="text"
+            showLineNumbers={false}
+          />
         </div>
       )}
 
@@ -112,9 +123,19 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               复制
             </Button>
           </div>
-          <div className="outputContent errorContent">
-            {result.error}
-          </div>
+          <OutputDisplay
+            content={result.error}
+            maxHeight={200}
+            minHeight={50}
+            autoScrollToBottom={false}
+            emptyDescription="无错误输出"
+            className="error-theme"
+            fontSize={12}
+            lineHeight={1.4}
+            useCodeMirror={true}
+            language="text"
+            showLineNumbers={false}
+          />
         </div>
       )}
     </Modal>

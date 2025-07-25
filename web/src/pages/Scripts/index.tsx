@@ -11,7 +11,6 @@ import {
   Popconfirm,
   message,
   Switch,
-  Tooltip,
 } from 'antd';
 import {
   PlusOutlined,
@@ -22,7 +21,9 @@ import {
   FileTextOutlined,
 } from '@ant-design/icons';
 import { ScriptForm, ScriptItem, LogsModal, ExecutionResultModal } from './components';
-import { getScripts, deleteScript as deleteScriptAPI, toggleScript, createScript, executeScript, getScriptLogs, ExecutionResult } from '@/services/scripts';
+import { getScripts, getScript, deleteScript as deleteScriptAPI, toggleScript, createScript, executeScript, getScriptLogs, ExecutionResult } from '@/services/scripts';
+import { getExecutorValueEnum, getExecutorRenderConfig } from '@/constants/executors';
+import ActionButton from '@/components/ActionButton';
 import styles from './index.less';
 
 
@@ -34,6 +35,7 @@ const ScriptsPage: React.FC = () => {
   const [executionResultModalVisible, setExecutionResultModalVisible] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [executingScriptId, setExecutingScriptId] = useState<string | null>(null);
+  const [copyingScriptId, setCopyingScriptId] = useState<string | null>(null);
   const [executedScript, setExecutedScript] = useState<ScriptItem | null>(null);
   const actionRef = useRef<ActionType>();
 
@@ -94,6 +96,12 @@ const ScriptsPage: React.FC = () => {
       if (params?.status) {
         queryParams.enabled = params.status === 'enabled';
       }
+
+      // 处理执行器筛选
+      if (params?.executor) {
+        queryParams.executor = params.executor;
+      }
+
       const response = await getScripts(queryParams);
 
       // 转换数据格式以适配前端显示
@@ -102,6 +110,7 @@ const ScriptsPage: React.FC = () => {
         name: script.name,
         description: script.description,
         content: '', // 列表页不需要内容
+        executor: script.executor,
         status: script.enabled ? 'enabled' as const : 'disabled' as const,
         trigger: 'webhook' as const,
         createdAt: script.created_at,
@@ -131,9 +140,17 @@ const ScriptsPage: React.FC = () => {
       const response = await toggleScript(record.id);
       message.success(response.message);
       actionRef.current?.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('切换脚本状态失败:', error);
-      message.error('操作失败，请重试');
+
+      let errorMessage = '操作失败，请重试';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
     }
   };
 
@@ -143,28 +160,56 @@ const ScriptsPage: React.FC = () => {
       const response = await deleteScriptAPI(id);
       message.success(response.message);
       actionRef.current?.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('删除脚本失败:', error);
-      message.error('删除失败，请重试');
+
+      let errorMessage = '删除失败，请重试';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
     }
   };
 
   // 复制脚本
   const copyScript = async (record: ScriptItem) => {
+    if (copyingScriptId) {
+      message.warning('有脚本正在复制中，请稍后再试');
+      return;
+    }
+
+    setCopyingScriptId(record.id);
     try {
+      // 先获取完整的脚本内容
+      const fullScript = await getScript(record.id);
+
       const newScriptData = {
         name: `${record.name} (副本)`,
         description: record.description,
-        content: record.content,
+        content: fullScript.content, // 使用获取到的完整内容
+        executor: fullScript.executor, // 使用相同的执行器
         enabled: false, // 副本默认禁用
       };
 
       const response = await createScript(newScriptData);
       message.success(response.message);
       actionRef.current?.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('复制脚本失败:', error);
-      message.error('复制失败，请重试');
+
+      let errorMessage = '复制失败，请重试';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
+    } finally {
+      setCopyingScriptId(null);
     }
   };
 
@@ -185,7 +230,13 @@ const ScriptsPage: React.FC = () => {
     setExecutingScriptId(record.id);
     try {
       const response = await executeScript(record.id);
-      message.success(`脚本 "${record.name}" 执行完成 🎯`);
+
+      // 检查执行结果
+      if (response.result.success) {
+        message.success(`脚本 "${record.name}" 执行成功 ✅`);
+      } else {
+        message.warning(`脚本 "${record.name}" 执行完成，但有错误 ⚠️`);
+      }
 
       // 显示执行结果
       setExecutionResult(response.result);
@@ -194,9 +245,18 @@ const ScriptsPage: React.FC = () => {
 
       // 刷新数据以显示最新的调用次数
       actionRef.current?.reload();
-    } catch (error) {
+    } catch (error: any) {
       console.error('脚本执行失败:', error);
-      message.error('脚本执行失败，请重试');
+
+      // 提取后端返回的具体错误信息
+      let errorMessage = '脚本执行失败，请重试';
+      if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+
+      message.error(errorMessage);
     } finally {
       setExecutingScriptId(null);
     }
@@ -248,6 +308,23 @@ const ScriptsPage: React.FC = () => {
       ),
     },
     {
+      title: '执行器',
+      dataIndex: 'executor',
+      width: 120,
+      valueType: 'select',
+      valueEnum: getExecutorValueEnum(),
+      render: (_, record) => {
+        const executorRenderConfig = getExecutorRenderConfig();
+        const config = executorRenderConfig[record.executor] || executorRenderConfig.bash;
+        return (
+          <Space>
+            <span>{config.icon}</span>
+            <span style={{ color: config.color, fontWeight: 500 }}>{config.text}</span>
+          </Space>
+        );
+      },
+    },
+    {
       title: '调用次数',
       dataIndex: 'callCount',
       width: 100,
@@ -289,43 +366,43 @@ const ScriptsPage: React.FC = () => {
     {
       title: '操作',
       valueType: 'option',
-      width: 280,
+      width: 210,
       render: (_, record) => [
-        <Tooltip key="exec" title="执行">
-          <Button
-            type="text"
-            icon={<PlayCircleOutlined />}
-            onClick={() => runScript(record)}
-            loading={executingScriptId === record.id}
-            disabled={!record.status || record.status === 'disabled'}
-            style={{ color: '#52c41a' }}
-          />
-        </Tooltip>,
-        <Tooltip key="logs" title="查看日志">
-          <Button
-            type="text"
-            icon={<FileTextOutlined />}
-            onClick={() => viewLogs(record)}
-            style={{ color: '#1890ff' }}
-          />
-        </Tooltip>,
-        <Tooltip key="edit" title="编辑">
-          <Button
-            type="text"
-            icon={<EditOutlined />}
-            onClick={() => {
-              setCurrentRecord(record);
-              setFormVisible(true);
-            }}
-          />
-        </Tooltip>,
-        <Tooltip key="copy" title="复制">
-          <Button
-            type="text"
-            icon={<CopyOutlined />}
-            onClick={() => copyScript(record)}
-          />
-        </Tooltip>,
+        <ActionButton
+          key="exec"
+          tooltip="执行"
+          color="#52c41a"
+          icon={<PlayCircleOutlined />}
+          onClick={() => runScript(record)}
+          loading={executingScriptId === record.id}
+          disabled={!record.status || record.status === 'disabled'}
+          disableHover={!record.status || record.status === 'disabled'}
+        />,
+        <ActionButton
+          key="logs"
+          tooltip="查看日志"
+          color="#1677ff"
+          icon={<FileTextOutlined />}
+          onClick={() => viewLogs(record)}
+        />,
+        <ActionButton
+          key="edit"
+          tooltip="编辑"
+          color="#fa8c16"
+          icon={<EditOutlined />}
+          onClick={() => {
+            setCurrentRecord(record);
+            setFormVisible(true);
+          }}
+        />,
+        <ActionButton
+          key="copy"
+          tooltip="复制"
+          color="#722ed1"
+          icon={<CopyOutlined />}
+          onClick={() => copyScript(record)}
+          loading={copyingScriptId === record.id}
+        />,
         <Popconfirm
           key="delete"
           title="确认删除"
@@ -334,13 +411,11 @@ const ScriptsPage: React.FC = () => {
           okText="确认"
           cancelText="取消"
         >
-          <Tooltip title="删除">
-            <Button
-              type="text"
-              danger
-              icon={<DeleteOutlined />}
-            />
-          </Tooltip>
+          <ActionButton
+            tooltip="删除"
+            color="#ff4d4f"
+            icon={<DeleteOutlined />}
+          />
         </Popconfirm>,
       ],
     },
@@ -363,6 +438,7 @@ const ScriptsPage: React.FC = () => {
           defaultPageSize: 10,
           showSizeChanger: true,
         }}
+        scroll={{ x: 1200 }}
         dateFormatter="string"
         headerTitle="脚本列表"
         toolBarRender={() => [

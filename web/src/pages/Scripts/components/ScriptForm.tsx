@@ -4,12 +4,14 @@ import {
   ProFormText,
   ProFormTextArea,
   ProFormSwitch,
+  ProFormSelect,
 } from '@ant-design/pro-components';
 import { message, Form } from 'antd';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 
 import { createScript, updateScript, getScript } from '@/services/scripts';
+import { getExecutorOptions, getExecutorConfig } from '@/constants/executors';
 
 // 脚本数据类型定义（兼容前端显示）
 export interface ScriptItem {
@@ -17,6 +19,7 @@ export interface ScriptItem {
   name: string;
   description: string;
   content: string;
+  executor: string;
   status: 'enabled' | 'disabled';
   trigger: 'webhook'; // 固定为webhook触发
   createdAt: string;
@@ -46,6 +49,15 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [scriptContent, setScriptContent] = useState('');
 
+  // 检查是否为默认模板
+  const isDefaultTemplate = (content: string) => {
+    if (!content.trim()) return true;
+    // 检查是否包含默认模板的特征字符串
+    return content.includes('Webhook脚本示例') ||
+           content.includes('在这里编写你的脚本逻辑') ||
+           content.includes('脚本执行完成');
+  };
+
   // 当编辑模式时，加载脚本内容
   useEffect(() => {
     if (visible && record) {
@@ -57,6 +69,7 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
           form.setFieldsValue({
             name: record.name,
             description: record.description,
+            executor: response.executor || 'bash',
             enabled: record.status === 'enabled',
           });
         })
@@ -69,8 +82,12 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
         });
     } else if (visible && !record) {
       // 新建模式，重置表单和内容
-      setScriptContent('');
       form.resetFields();
+      // 设置默认执行器为bash，并使用对应的默认模板
+      const defaultExecutor = 'bash';
+      const defaultConfig = getExecutorConfig(defaultExecutor);
+      form.setFieldValue('executor', defaultExecutor);
+      setScriptContent(defaultConfig?.defaultTemplate || '');
     }
   }, [visible, record, form]);
   // 保存脚本
@@ -80,6 +97,7 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
         name: values.name,
         description: values.description || '',
         content: scriptContent,
+        executor: values.executor || 'bash',
         enabled: values.enabled !== false, // 默认启用
       };
 
@@ -145,6 +163,25 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
           showCount: true,
           maxLength: 200,
         }}
+      />
+
+      <ProFormSelect
+        name="executor"
+        label="执行器类型"
+        placeholder="请选择脚本执行器"
+        initialValue="bash"
+        rules={[
+          { required: true, message: '请选择执行器类型' },
+        ]}
+        options={getExecutorOptions()}
+        onChange={(value: string) => {
+          // 当执行器改变时，如果当前脚本内容为空或为默认模板，则更新为新执行器的默认模板
+          const config = getExecutorConfig(value);
+          if (config && (!scriptContent || isDefaultTemplate(scriptContent))) {
+            setScriptContent(config.defaultTemplate);
+          }
+        }}
+        tooltip="选择脚本的执行环境，确保服务器已安装对应的运行时"
       />
 
       <ProFormSwitch

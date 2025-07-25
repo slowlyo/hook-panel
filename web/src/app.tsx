@@ -80,14 +80,22 @@ export const request = {
   // 错误处理
   errorConfig: {
     errorHandler: (error: any) => {
+      // 只处理认证错误，其他错误让具体的业务代码处理
       if (error.response?.status === 401) {
         message.error('认证失败，请重新登录');
         history.push('/auth');
-      } else if (error.response?.status >= 500) {
-        message.error('服务器错误，请稍后重试');
-      } else if (error.message) {
-        message.error(error.message);
+        return;
       }
+
+      // 对于脚本执行相关的错误，不在全局处理，让业务代码自己处理
+      const isScriptExecutionError = error.config?.url?.includes('/execute') ||
+                                   error.config?.url?.includes('/scripts');
+
+      if (!isScriptExecutionError && error.response?.status >= 500) {
+        message.error('服务器错误，请稍后重试');
+      }
+
+      // 抛出错误让业务代码处理
       throw error;
     },
   },
