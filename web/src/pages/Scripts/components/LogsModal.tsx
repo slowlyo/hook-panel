@@ -3,7 +3,6 @@ import { Modal, Button, message, Popconfirm } from 'antd';
 import { ReloadOutlined, DownloadOutlined, ClearOutlined } from '@ant-design/icons';
 import { getScriptLogs, clearScriptLogs } from '@/services/scripts';
 import OutputDisplay, { OutputDisplayRef } from '@/components/OutputDisplay';
-import './LogsModal.less';
 
 interface LogsModalProps {
   visible: boolean;

@@ -3,6 +3,11 @@ import { defineConfig } from '@umijs/max';
 export default defineConfig({
   antd: {
     configProvider: {},
+    theme: {
+      token: {
+        colorPrimary: '#13c2c2'
+      }
+    }
   },
   access: {},
   model: {},
@@ -33,6 +38,12 @@ export default defineConfig({
       path: '/scripts',
       component: './Scripts',
       icon: 'CodeOutlined',
+    },
+    {
+      name: '调用记录',
+      path: '/webhook-logs',
+      component: './WebhookLogs',
+      icon: 'HistoryOutlined',
     },
   ],
   npmClient: 'pnpm',

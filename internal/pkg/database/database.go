@@ -16,7 +16,7 @@ import (
 var DB *gorm.DB
 
 // InitDatabase 初始化数据库
-func InitDatabase() error {
+func InitDatabase(port string) error {
 	// 确保 data 目录存在
 	dataDir := "./data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
@@ -54,8 +54,13 @@ func InitDatabase() error {
 	}
 
 	// 自动迁移
-	if err := DB.AutoMigrate(&models.Script{}); err != nil {
+	if err := DB.AutoMigrate(&models.Script{}, &models.WebhookLog{}, &models.SystemConfig{}); err != nil {
 		return fmt.Errorf("数据库迁移失败: %v", err)
+	}
+
+	// 初始化默认系统配置
+	if err := initDefaultConfigs(port); err != nil {
+		return fmt.Errorf("初始化默认配置失败: %v", err)
 	}
 
 	log.Println("📦 数据库初始化成功")
@@ -75,6 +80,33 @@ func CloseDatabase() error {
 			return err
 		}
 		return sqlDB.Close()
+	}
+	return nil
+}
+
+// initDefaultConfigs 初始化默认系统配置
+func initDefaultConfigs(port string) error {
+	for _, config := range models.DefaultSystemConfigs {
+		// 检查配置是否已存在
+		var existingConfig models.SystemConfig
+		if err := DB.Where("key = ?", config.Key).First(&existingConfig).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				// 配置不存在，创建新配置
+				newConfig := config
+
+				// 如果是域名配置且使用自定义端口，设置默认域名
+				if config.Key == "system.domain" && port != "" && port != "8080" {
+					newConfig.Value = fmt.Sprintf("http://localhost:%s", port)
+				}
+
+				if err := DB.Create(&newConfig).Error; err != nil {
+					return fmt.Errorf("创建默认配置 %s 失败: %v", config.Key, err)
+				}
+			} else {
+				return fmt.Errorf("查询配置 %s 失败: %v", config.Key, err)
+			}
+		}
+		// 配置已存在，跳过
 	}
 	return nil
 }

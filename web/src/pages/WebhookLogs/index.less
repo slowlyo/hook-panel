@@ -1,0 +1,42 @@
+.webhooksContainer {
+  .ant-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    
+    .ant-statistic-title {
+      font-size: 14px;
+      color: rgba(0, 0, 0, 0.65);
+    }
+    
+    .ant-statistic-content {
+      font-size: 24px;
+      font-weight: 600;
+    }
+  }
+  
+  .ant-pro-table {
+    .ant-table-tbody > tr:hover > td {
+      background-color: rgba(0, 0, 0, 0.02);
+    }
+  }
+}
+
+// 暗色主题适配
+[data-prefers-color="dark"] {
+  .webhooksContainer {
+    .ant-card {
+      background-color: #1f1f1f;
+      border-color: #303030;
+      
+      .ant-statistic-title {
+        color: rgba(255, 255, 255, 0.65);
+      }
+    }
+    
+    .ant-pro-table {
+      .ant-table-tbody > tr:hover > td {
+        background-color: rgba(255, 255, 255, 0.04);
+      }
+    }
+  }
+}

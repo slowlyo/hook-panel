@@ -19,11 +19,13 @@ import {
   CopyOutlined,
   PlayCircleOutlined,
   FileTextOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
-import { ScriptForm, ScriptItem, LogsModal, ExecutionResultModal } from './components';
+import { ScriptForm, ScriptItem, LogsModal, ExecutionResultModal, WebhookModal } from './components';
 import { getScripts, getScript, deleteScript as deleteScriptAPI, toggleScript, createScript, executeScript, getScriptLogs, ExecutionResult } from '@/services/scripts';
 import { getExecutorValueEnum, getExecutorRenderConfig } from '@/constants/executors';
 import ActionButton from '@/components/ActionButton';
+import { formatDateTime } from '@/utils/dateFormat';
 import styles from './index.less';
 
 
@@ -33,30 +35,12 @@ const ScriptsPage: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<ScriptItem | null>(null);
   const [logsModalVisible, setLogsModalVisible] = useState(false);
   const [executionResultModalVisible, setExecutionResultModalVisible] = useState(false);
+  const [webhookModalVisible, setWebhookModalVisible] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [executingScriptId, setExecutingScriptId] = useState<string | null>(null);
   const [copyingScriptId, setCopyingScriptId] = useState<string | null>(null);
   const [executedScript, setExecutedScript] = useState<ScriptItem | null>(null);
   const actionRef = useRef<ActionType>();
-
-  // 格式化日期时间
-  const formatDateTime = (dateTime?: string) => {
-    if (!dateTime) return null;
-    try {
-      const date = new Date(dateTime);
-      return date.toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      });
-    } catch (error) {
-      return dateTime; // 如果格式化失败，返回原始值
-    }
-  };
 
 
 
@@ -81,7 +65,7 @@ const ScriptsPage: React.FC = () => {
       // 构建查询参数
       const queryParams: any = {
         page: current || 1,
-        page_size: pageSize || 10,
+        page_size: pageSize || 20,
         sort_field,
         sort_order,
         ...rest,
@@ -268,6 +252,12 @@ const ScriptsPage: React.FC = () => {
     setLogsModalVisible(true);
   };
 
+  // 查看 webhook
+  const viewWebhook = (record: ScriptItem) => {
+    setCurrentRecord(record);
+    setWebhookModalVisible(true);
+  };
+
   // 表格列定义
   const columns: ProColumns<ScriptItem>[] = [
     {
@@ -343,7 +333,7 @@ const ScriptsPage: React.FC = () => {
       search: false,
       sorter: true,
       render: (_, record) => {
-        const formattedTime = formatDateTime(record.lastCallTime);
+        const formattedTime = record.lastCallTime ? formatDateTime(record.lastCallTime) : null;
         return (
           <span style={{ color: formattedTime ? '#666' : '#ccc' }}>
             {formattedTime || '从未调用'}
@@ -366,7 +356,7 @@ const ScriptsPage: React.FC = () => {
     {
       title: '操作',
       valueType: 'option',
-      width: 210,
+      width: 250,
       render: (_, record) => [
         <ActionButton
           key="exec"
@@ -384,6 +374,13 @@ const ScriptsPage: React.FC = () => {
           color="#1677ff"
           icon={<FileTextOutlined />}
           onClick={() => viewLogs(record)}
+        />,
+        <ActionButton
+          key="webhook"
+          tooltip="Webhook"
+          color="#13c2c2"
+          icon={<LinkOutlined />}
+          onClick={() => viewWebhook(record)}
         />,
         <ActionButton
           key="edit"
@@ -435,7 +432,7 @@ const ScriptsPage: React.FC = () => {
           labelWidth: 'auto',
         }}
         pagination={{
-          defaultPageSize: 10,
+          defaultPageSize: 20,
           showSizeChanger: true,
         }}
         scroll={{ x: 1200 }}
@@ -490,6 +487,16 @@ const ScriptsPage: React.FC = () => {
         scriptName={executedScript?.name || ''}
       />
 
+      {/* Webhook 弹窗 */}
+      <WebhookModal
+        visible={webhookModalVisible}
+        onCancel={() => {
+          setWebhookModalVisible(false);
+          setCurrentRecord(null);
+        }}
+        scriptId={currentRecord?.id || ''}
+        scriptName={currentRecord?.name || ''}
+      />
 
     </PageContainer>
   );

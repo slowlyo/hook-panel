@@ -78,12 +78,9 @@ const OutputDisplay = forwardRef<OutputDisplayRef, OutputDisplayProps>(({
     }
   };
 
-  // 获取主题
+  // 统一使用暗色主题
   const getTheme = () => {
-    if (className.includes('dark-theme') || className.includes('error-theme')) {
-      return oneDark;
-    }
-    return 'light'; // 使用 CodeMirror 内置的亮色主题
+    return oneDark;
   };
 
   // 滚动到底部

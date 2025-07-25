@@ -1,3 +1,56 @@
 .container {
-  padding-top: 80px;
+  padding: 0;
+
+  .ant-card {
+    border-radius: 8px;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  }
+
+  .ant-statistic-card {
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  .actionCard {
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .ant-card-body {
+      padding: 16px 8px;
+    }
+  }
+
+  .actionContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .actionIcon {
+    font-size: 24px;
+    transition: all 0.3s ease;
+  }
+
+  .actionCard:hover .actionIcon {
+    transform: scale(1.1);
+  }
+
+  .actionText {
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
 }

@@ -321,46 +321,6 @@ func ToggleScript(c *gin.Context) {
 	})
 }
 
-// IncrementCallCount 增加调用次数
-func IncrementCallCount(c *gin.Context) {
-	scriptID := c.Param("id")
-	if scriptID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
-		})
-		return
-	}
-
-	db := database.GetDB()
-	now := time.Now()
-
-	// 更新调用次数和最近调用时间
-	result := db.Model(&models.Script{}).
-		Where("id = ?", scriptID).
-		Updates(map[string]interface{}{
-			"call_count":   gorm.Expr("call_count + 1"),
-			"last_call_at": now,
-		})
-
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "更新调用统计失败",
-		})
-		return
-	}
-
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "调用统计已更新 ✅",
-	})
-}
-
 // ExecuteScript 执行脚本
 func ExecuteScript(c *gin.Context) {
 	scriptID := c.Param("id")
