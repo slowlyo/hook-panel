@@ -8,14 +8,14 @@
 
 #### 快速下载（推荐）
 
+**Linux x64:**
 ```bash
-# Linux x64
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64.tar.gz
-tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64.tar.gz && tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
+```
 
-# Linux ARM64
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz
-tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
+**Linux ARM64:**
+```bash
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz && tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 ```
 
 #### 手动下载
