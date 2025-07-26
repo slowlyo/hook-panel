@@ -124,28 +124,18 @@ jobs:
               -o "build/${output_name}" \
               main.go
             
-            # 创建压缩包（同时生成带版本号和不带版本号的两个文件）
+            # 创建压缩包
             cd build
             if [ "$GOOS" = "windows" ]; then
               # Windows 使用 zip 格式
-              versioned_name="hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip"
-              latest_name="hook-panel-${GOOS}-${GOARCH}.zip"
-
-              zip -9 "$versioned_name" "$output_name"
-              cp "$versioned_name" "$latest_name"
-
-              echo "✅ Created $versioned_name"
-              echo "✅ Created $latest_name"
+              archive_name="hook-panel-${GOOS}-${GOARCH}.zip"
+              zip -9 "$archive_name" "$output_name"
+              echo "✅ Created $archive_name"
             else
               # 其他系统使用 tar.gz 格式
-              versioned_name="hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz"
-              latest_name="hook-panel-${GOOS}-${GOARCH}.tar.gz"
-
-              tar -czf "$versioned_name" "$output_name"
-              cp "$versioned_name" "$latest_name"
-
-              echo "✅ Created $versioned_name"
-              echo "✅ Created $latest_name"
+              archive_name="hook-panel-${GOOS}-${GOARCH}.tar.gz"
+              tar -czf "$archive_name" "$output_name"
+              echo "✅ Created $archive_name"
             fi
 
             # 清理二进制文件，保留压缩包
@@ -168,41 +158,21 @@ jobs:
       - name: 📝 Generate release notes
         run: |
           cat > release_notes.md << 'EOF'
-          ## 🚀 Hook Panel ${{ github.ref_name }}
-          
-          ### 📦 支持的架构
-          
-          - **Linux AMD64** (x86_64) - 适用于大多数 Linux 服务器
-          - **Linux ARM64** - 适用于 ARM64 架构的 Linux 服务器
-          - **Windows AMD64** - 适用于 Windows 系统
-          - **macOS Intel** - 适用于 Intel 芯片的 macOS
-          - **macOS Apple Silicon** - 适用于 M1/M2 芯片的 macOS
-          
-          ### 🔧 使用方法
-          
-          1. 下载对应架构的压缩包
-          2. 解压缩文件
-          3. 运行二进制文件：
-             ```bash
-             # Linux/macOS
-             ./hook-panel
-             
-             # Windows
-             hook-panel.exe
-             ```
-          
-          ### ✨ 特性
-          
-          - 🎯 轻量级 Webhook 脚本管理平台
-          - 🔐 安全的密钥认证机制
-          - 📊 实时仪表板和统计信息
-          - 📝 脚本执行日志记录
-          - 🌐 现代化的 Web 界面
-          - 📱 响应式设计，支持移动端
-          
-          ### 🔍 校验和
-          
-          请使用 `checksums.txt` 文件验证下载文件的完整性。
+          ## Downloads
+
+          | Platform | Architecture | Download |
+          |----------|-------------|----------|
+          | Linux | AMD64 | [hook-panel-linux-amd64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hook-panel-linux-amd64.tar.gz) |
+          | Linux | ARM64 | [hook-panel-linux-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hook-panel-linux-arm64.tar.gz) |
+          | Windows | AMD64 | [hook-panel-windows-amd64.zip](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hook-panel-windows-amd64.zip) |
+          | macOS | Intel | [hook-panel-darwin-amd64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hook-panel-darwin-amd64.tar.gz) |
+          | macOS | Apple Silicon | [hook-panel-darwin-arm64.tar.gz](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/hook-panel-darwin-arm64.tar.gz) |
+
+          ## Verification
+
+          Use [checksums.txt](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/checksums.txt) to verify file integrity.
+
+          For detailed usage instructions, please refer to the [README](https://github.com/${{ github.repository }}/blob/main/README.md).
           EOF
 
       # 14. 创建 GitHub Release

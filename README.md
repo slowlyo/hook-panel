@@ -16,14 +16,6 @@ tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 # Linux ARM64
 curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz
 tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
-
-# macOS Intel
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-amd64.tar.gz
-tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
-
-# macOS Apple Silicon
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-arm64.tar.gz
-tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 ```
 
 #### 手动下载
@@ -32,15 +24,11 @@ tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 
 - **Linux (x64)**: `hook-panel-linux-amd64.tar.gz`
 - **Linux (ARM64)**: `hook-panel-linux-arm64.tar.gz`
-- **macOS (Intel)**: `hook-panel-darwin-amd64.tar.gz`
-- **macOS (Apple Silicon)**: `hook-panel-darwin-arm64.tar.gz`
-- **Windows (x64)**: `hook-panel-windows-amd64.zip`
 
 下载后解压即可使用。
 
 ### 2. 运行程序
 
-#### Linux/macOS
 ```bash
 # 添加执行权限
 chmod +x hook-panel
@@ -52,16 +40,6 @@ chmod +x hook-panel
 ./hook-panel --port 3000
 # 或使用简写
 ./hook-panel -p 3000
-```
-
-#### Windows
-下载 `hook-panel-windows-amd64.exe` 后：
-```cmd
-# 默认启动（端口 8080）
-hook-panel-windows-amd64.exe
-
-# 自定义端口启动
-hook-panel-windows-amd64.exe --port 3000
 ```
 
 ### 3. 访问面板
@@ -142,7 +120,7 @@ curl -X POST \
 ### 常见问题
 
 1. **端口被占用**：使用 `-p` 参数指定其他端口
-2. **权限不足**：Linux/macOS 下确保文件有执行权限
+2. **权限不足**：确保文件有执行权限（`chmod +x hook-panel`）
 3. **脚本执行失败**：检查脚本语法和系统环境依赖
 
 ### 健康检查
