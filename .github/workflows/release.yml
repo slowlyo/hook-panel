@@ -7,12 +7,14 @@ on:
 
 env:
   GO_VERSION: '1.23'
-  NODE_VERSION: '18'
+  NODE_VERSION: '22'
 
 jobs:
   build-and-release:
     name: 🏗️ Build and Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 允许创建 release 和上传文件
     
     steps:
       # 1. 检出代码
@@ -122,18 +124,30 @@ jobs:
               -o "build/${output_name}" \
               main.go
             
-            # 创建压缩包
+            # 创建压缩包（同时生成带版本号和不带版本号的两个文件）
             cd build
             if [ "$GOOS" = "windows" ]; then
               # Windows 使用 zip 格式
-              zip -9 "hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip" "$output_name"
-              echo "✅ Created hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip"
+              versioned_name="hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.zip"
+              latest_name="hook-panel-${GOOS}-${GOARCH}.zip"
+
+              zip -9 "$versioned_name" "$output_name"
+              cp "$versioned_name" "$latest_name"
+
+              echo "✅ Created $versioned_name"
+              echo "✅ Created $latest_name"
             else
               # 其他系统使用 tar.gz 格式
-              tar -czf "hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz" "$output_name"
-              echo "✅ Created hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz"
+              versioned_name="hook-panel-${{ github.ref_name }}-${GOOS}-${GOARCH}.tar.gz"
+              latest_name="hook-panel-${GOOS}-${GOARCH}.tar.gz"
+
+              tar -czf "$versioned_name" "$output_name"
+              cp "$versioned_name" "$latest_name"
+
+              echo "✅ Created $versioned_name"
+              echo "✅ Created $latest_name"
             fi
-            
+
             # 清理二进制文件，保留压缩包
             rm "$output_name"
             cd ..

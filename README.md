@@ -10,27 +10,33 @@
 
 ```bash
 # Linux x64
-curl -L -o hook-panel https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64.tar.gz
+tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 
 # Linux ARM64
-curl -L -o hook-panel https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz
+tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 
 # macOS Intel
-curl -L -o hook-panel https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-amd64
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-amd64.tar.gz
+tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 
 # macOS Apple Silicon
-curl -L -o hook-panel https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-arm64
+curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-darwin-arm64.tar.gz
+tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
 ```
 
 #### 手动下载
 
-也可以前往 [GitHub Releases](https://github.com/slowlyo/hook-panel/releases/latest) 页面手动下载：
+前往 [GitHub Releases](https://github.com/slowlyo/hook-panel/releases/latest) 页面下载对应的压缩包：
 
-- **Linux (x64)**: `hook-panel-linux-amd64`
-- **Linux (ARM64)**: `hook-panel-linux-arm64`
-- **macOS (Intel)**: `hook-panel-darwin-amd64`
-- **macOS (Apple Silicon)**: `hook-panel-darwin-arm64`
-- **Windows (x64)**: `hook-panel-windows-amd64.exe`
+- **Linux (x64)**: `hook-panel-linux-amd64.tar.gz`
+- **Linux (ARM64)**: `hook-panel-linux-arm64.tar.gz`
+- **macOS (Intel)**: `hook-panel-darwin-amd64.tar.gz`
+- **macOS (Apple Silicon)**: `hook-panel-darwin-arm64.tar.gz`
+- **Windows (x64)**: `hook-panel-windows-amd64.zip`
+
+下载后解压即可使用。
 
 ### 2. 运行程序
 
