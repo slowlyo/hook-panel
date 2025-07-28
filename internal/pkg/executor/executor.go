@@ -44,17 +44,17 @@ func (e *ScriptExecutor) ExecuteScript(scriptID, content, executor string) (*Exe
 	startTime := time.Now()
 	timestamp := startTime.Format("2006-01-02 15:04:05")
 
-	// 记录开始执行日志
-	logHeader := fmt.Sprintf("\n=== 脚本执行开始 [%s] ===\n", timestamp)
+	// Record execution start log
+	logHeader := fmt.Sprintf("\n=== Script execution started [%s] ===\n", timestamp)
 	if err := file.SaveScriptLog(scriptID, logHeader); err != nil {
-		return nil, fmt.Errorf("记录执行日志失败: %v", err)
+		return nil, fmt.Errorf("failed to record execution log: %v", err)
 	}
 
 	// 使用指定的执行器类型执行脚本
 	result, err := e.executeByType(scriptID, content, executor)
 	if err != nil {
-		// 记录错误日志
-		errorLog := fmt.Sprintf("执行失败: %v\n", err)
+		// Record error log
+		errorLog := fmt.Sprintf("Execution failed: %v\n", err)
 		file.SaveScriptLog(scriptID, errorLog)
 		return nil, err
 	}
@@ -64,9 +64,9 @@ func (e *ScriptExecutor) ExecuteScript(scriptID, content, executor string) (*Exe
 	result.Duration = duration.String()
 	result.Timestamp = timestamp
 
-	// 记录执行结果日志
-	resultLog := fmt.Sprintf("执行结果: %s\n", formatExecutionResult(result))
-	resultLog += fmt.Sprintf("=== 脚本执行结束 [%s] ===\n\n", time.Now().Format("2006-01-02 15:04:05"))
+	// Record execution result log
+	resultLog := fmt.Sprintf("Execution result: %s\n", formatExecutionResult(result))
+	resultLog += fmt.Sprintf("=== Script execution ended [%s] ===\n\n", time.Now().Format("2006-01-02 15:04:05"))
 	file.SaveScriptLog(scriptID, resultLog)
 
 	return result, nil
@@ -77,7 +77,7 @@ func (e *ScriptExecutor) executeByType(scriptID, content, executor string) (*Exe
 	// 创建临时脚本文件
 	tempFile, err := e.createTempScript(scriptID, content, executor)
 	if err != nil {
-		return nil, fmt.Errorf("创建临时脚本文件失败: %v", err)
+		return nil, fmt.Errorf("failed to create temporary script file: %v", err)
 	}
 	defer os.Remove(tempFile) // 清理临时文件
 
@@ -121,7 +121,7 @@ func (e *ScriptExecutor) createTempScript(scriptID, content, executor string) (s
 	// 确保临时目录存在
 	tempDir := filepath.Join("./data", "temp")
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return "", fmt.Errorf("创建临时目录失败: %v", err)
+		return "", fmt.Errorf("failed to create temp directory: %v", err)
 	}
 
 	// 根据执行器类型确定文件扩展名
@@ -154,7 +154,7 @@ func (e *ScriptExecutor) createTempScript(scriptID, content, executor string) (s
 
 	// 写入脚本内容
 	if err := os.WriteFile(tempFile, []byte(content), 0755); err != nil {
-		return "", fmt.Errorf("写入临时脚本失败: %v", err)
+		return "", fmt.Errorf("failed to write temp script: %v", err)
 	}
 
 	return tempFile, nil
@@ -170,17 +170,17 @@ func (e *ScriptExecutor) runCommand(cmd *exec.Cmd, scriptID string) (*ExecutionR
 	// 创建管道捕获输出
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, fmt.Errorf("创建stdout管道失败: %v", err)
+		return nil, fmt.Errorf("failed to create stdout pipe: %v", err)
 	}
 
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
-		return nil, fmt.Errorf("创建stderr管道失败: %v", err)
+		return nil, fmt.Errorf("failed to create stderr pipe: %v", err)
 	}
 
 	// 启动命令
 	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("启动命令失败: %v", err)
+		return nil, fmt.Errorf("failed to start command: %v", err)
 	}
 
 	// 实时读取输出并记录日志
@@ -227,12 +227,12 @@ func (e *ScriptExecutor) readAndLog(reader io.Reader, builder *strings.Builder, 
 	}
 }
 
-// formatExecutionResult 格式化执行结果用于日志
+// formatExecutionResult formats execution result for logging
 func formatExecutionResult(result *ExecutionResult) string {
-	status := "成功"
+	status := "Success"
 	if !result.Success {
-		status = "失败"
+		status = "Failed"
 	}
 
-	return fmt.Sprintf("%s (退出码: %d, 耗时: %s)", status, result.ExitCode, result.Duration)
+	return fmt.Sprintf("%s (exit code: %d, duration: %s)", status, result.ExitCode, result.Duration)
 }

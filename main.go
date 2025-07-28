@@ -13,6 +13,7 @@ import (
 	"hook-panel/internal/middleware"
 	"hook-panel/internal/pkg/auth"
 	"hook-panel/internal/pkg/database"
+	"hook-panel/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,22 +26,22 @@ func setupStaticFiles(r *gin.Engine) {
 	// 获取嵌入的文件系统
 	distFS, err := fs.Sub(staticFiles, "web/dist")
 	if err != nil {
-		log.Fatal("获取静态文件系统失败:", err)
+		log.Fatal("Failed to get static file system:", err)
 	}
 
 	// 处理前端路由，所有非API请求都返回index.html或静态文件
 	r.NoRoute(func(c *gin.Context) {
 		path := c.Request.URL.Path
 
-		// 如果是API请求，返回404
+		// If it's an API request, return 404
 		if len(path) >= 4 && path[:4] == "/api" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "接口不存在"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "API not found"})
 			return
 		}
 
-		// 如果是webhook请求，返回404
+		// If it's a webhook request, return 404
 		if len(path) >= 2 && path[:2] == "/h" {
-			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook不存在"})
+			c.JSON(http.StatusNotFound, gin.H{"error": "Webhook not found"})
 			return
 		}
 
@@ -69,7 +70,7 @@ func setupStaticFiles(r *gin.Engine) {
 		// 如果文件不存在，返回index.html（SPA路由）
 		indexFile, err := distFS.Open("index.html")
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "页面加载失败"})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load page"})
 			return
 		}
 		defer indexFile.Close()
@@ -126,36 +127,40 @@ func getContentType(filePath string) string {
 func main() {
 	// 解析命令行参数
 	var port string
-	flag.StringVar(&port, "port", "", "服务端口 (默认: 8080)")
-	flag.StringVar(&port, "p", "", "服务端口 (简写)")
+	flag.StringVar(&port, "port", "", "Server port (default: 8080)")
+	flag.StringVar(&port, "p", "", "Server port (short)")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Hook Panel - 轻量级 Webhook 脚本管理平台\n\n")
-		fmt.Fprintf(os.Stderr, "使用方法:\n")
-		fmt.Fprintf(os.Stderr, "  %s [选项]\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "选项:\n")
+		fmt.Fprintf(os.Stderr, "Hook Panel - Lightweight Webhook Script Management Platform\n\n")
+		fmt.Fprintf(os.Stderr, "Usage:\n")
+		fmt.Fprintf(os.Stderr, "  %s [options]\n\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
-		fmt.Fprintf(os.Stderr, "\n示例:\n")
-		fmt.Fprintf(os.Stderr, "  %s --port 3000    # 在端口 3000 启动服务\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "  %s -p 8888        # 在端口 8888 启动服务\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "\nExamples:\n")
+		fmt.Fprintf(os.Stderr, "  %s --port 3000    # Start service on port 3000\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  %s -p 8888        # Start service on port 8888\n", os.Args[0])
 	}
 	flag.Parse()
 
-	log.Println("🚀 启动 Hook Panel...")
+	log.Println("🚀 Starting Hook Panel...")
 
-	// 初始化密钥
-	log.Println("🔑 初始化密钥...")
+	// Initialize secret key
+	log.Println("🔑 Initializing secret key...")
 	if err := auth.InitSecretKey(); err != nil {
-		log.Fatal("密钥初始化失败:", err)
+		log.Fatal("Failed to initialize secret key:", err)
 	}
 
-	// 初始化数据库
-	log.Println("📦 初始化数据库...")
+	// Initialize database
+	log.Println("📦 Initializing database...")
 	if err := database.InitDatabase(port); err != nil {
-		log.Fatal("数据库初始化失败:", err)
+		log.Fatal("Failed to initialize database:", err)
 	}
 
-	// 设置 Gin 模式
-	log.Println("🌐 设置 Web 服务...")
+	// Initialize i18n system
+	log.Println("🌐 Initializing i18n system...")
+	i18n.Init()
+
+	// Set Gin mode
+	log.Println("🌐 Setting up web service...")
 	gin.SetMode(gin.ReleaseMode)
 
 	// 创建路由器
@@ -176,6 +181,7 @@ func main() {
 
 	// 需要认证的路由组
 	api := r.Group("/api")
+	api.Use(middleware.I18nMiddleware())
 	api.Use(middleware.AuthMiddleware())
 	{
 		// 仪表板统计
@@ -221,8 +227,8 @@ func main() {
 		}
 	}
 
-	log.Printf("🚀 服务启动在端口 %s", port)
+	log.Printf("🚀 Service started on port %s", port)
 	if err := r.Run(":" + port); err != nil {
-		log.Fatal("启动服务失败:", err)
+		log.Fatal("Failed to start service:", err)
 	}
 }

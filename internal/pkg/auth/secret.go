@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	SecretKeyFile = "./data/secret.key"
+	SecretKeyFile   = "./data/secret.key"
 	SecretKeyLength = 32 // 32字节 = 64个十六进制字符
 )
 
@@ -22,36 +22,36 @@ func InitSecretKey() error {
 	// 确保 data 目录存在
 	dataDir := "./data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		return fmt.Errorf("创建 data 目录失败: %v", err)
+		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
 	// 检查密钥文件是否存在
 	if _, err := os.Stat(SecretKeyFile); os.IsNotExist(err) {
 		// 文件不存在，生成新密钥
 		if err := generateAndSaveSecretKey(); err != nil {
-			return fmt.Errorf("生成密钥失败: %v", err)
+			return fmt.Errorf("failed to generate secret key: %v", err)
 		}
-		log.Println("🔑 已生成新的访问密钥")
+		log.Println("🔑 Generated new access key")
 	} else {
-		// 文件存在，读取密钥
+		// File exists, load secret key
 		if err := loadSecretKey(); err != nil {
-			return fmt.Errorf("加载密钥失败: %v", err)
+			return fmt.Errorf("failed to load secret key: %v", err)
 		}
-		
-		// 检查密钥是否为空
+
+		// Check if secret key is empty
 		if strings.TrimSpace(secretKey) == "" {
-			// 密钥为空，重新生成
+			// Secret key is empty, regenerate
 			if err := generateAndSaveSecretKey(); err != nil {
-				return fmt.Errorf("重新生成密钥失败: %v", err)
+				return fmt.Errorf("failed to regenerate secret key: %v", err)
 			}
-			log.Println("🔑 密钥文件为空，已重新生成访问密钥")
+			log.Println("🔑 Secret key file is empty, regenerated access key")
 		} else {
-			log.Println("🔑 已加载现有访问密钥")
+			log.Println("🔑 Loaded existing access key")
 		}
 	}
 
-	// 输出密钥内容
-	log.Printf("🔐 访问密钥: %s", secretKey)
+	// Output secret key content
+	log.Printf("🔐 Access key: %s", secretKey)
 	return nil
 }
 
@@ -60,7 +60,7 @@ func generateAndSaveSecretKey() error {
 	// 生成32字节的随机密钥
 	keyBytes := make([]byte, SecretKeyLength)
 	if _, err := rand.Read(keyBytes); err != nil {
-		return fmt.Errorf("生成随机密钥失败: %v", err)
+		return fmt.Errorf("failed to generate random key: %v", err)
 	}
 
 	// 转换为十六进制字符串
@@ -68,7 +68,7 @@ func generateAndSaveSecretKey() error {
 
 	// 保存到文件
 	if err := os.WriteFile(SecretKeyFile, []byte(secretKey), 0600); err != nil {
-		return fmt.Errorf("保存密钥文件失败: %v", err)
+		return fmt.Errorf("failed to save secret key file: %v", err)
 	}
 
 	return nil
@@ -78,7 +78,7 @@ func generateAndSaveSecretKey() error {
 func loadSecretKey() error {
 	content, err := os.ReadFile(SecretKeyFile)
 	if err != nil {
-		return fmt.Errorf("读取密钥文件失败: %v", err)
+		return fmt.Errorf("failed to read secret key file: %v", err)
 	}
 
 	secretKey = strings.TrimSpace(string(content))
@@ -95,7 +95,7 @@ func RegenerateSecretKey() error {
 	if err := generateAndSaveSecretKey(); err != nil {
 		return err
 	}
-	log.Printf("🔄 已重新生成访问密钥: %s", secretKey)
+	log.Printf("🔄 Regenerated access key: %s", secretKey)
 	return nil
 }
 

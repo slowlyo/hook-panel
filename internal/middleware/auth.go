@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"hook-panel/internal/pkg/auth"
+	"hook-panel/internal/pkg/i18n"
 	"net/http"
 	"strings"
 
@@ -18,7 +19,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "缺少 Authorization header",
+				"error": i18n.T(c, "error.auth.missing_header"),
 			})
 			c.Abort()
 			return
@@ -27,7 +28,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 检查是否以 "Bearer " 开头
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Authorization header 格式错误，应为 'Bearer <token>'",
+				"error": i18n.T(c, "error.auth.invalid_header_format"),
 			})
 			c.Abort()
 			return
@@ -37,7 +38,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		token := strings.TrimPrefix(authHeader, "Bearer ")
 		if token == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "Token 不能为空",
+				"error": i18n.T(c, "error.auth.empty_token"),
 			})
 			c.Abort()
 			return
@@ -46,7 +47,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// 验证 token
 		if token != secretKey {
 			c.JSON(http.StatusUnauthorized, gin.H{
-				"error": "无效的 token",
+				"error": i18n.T(c, "error.auth.invalid_token"),
 			})
 			c.Abort()
 			return

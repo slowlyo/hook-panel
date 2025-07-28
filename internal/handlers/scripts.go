@@ -10,6 +10,7 @@ import (
 	"hook-panel/internal/pkg/database"
 	"hook-panel/internal/pkg/executor"
 	"hook-panel/internal/pkg/file"
+	"hook-panel/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -66,7 +67,7 @@ func GetScripts(c *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "获取脚本总数失败",
+			"error": i18n.T(c, "error.script.get_failed"),
 		})
 		return
 	}
@@ -79,7 +80,7 @@ func GetScripts(c *gin.Context) {
 	orderBy := buildOrderBy(sortField, sortOrder)
 	if err := query.Order(orderBy).Offset(offset).Limit(pageSize).Find(&scripts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "获取脚本列表失败",
+			"error": i18n.T(c, "error.script.get_failed"),
 		})
 		return
 	}
@@ -97,7 +98,7 @@ func GetScript(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -106,7 +107,7 @@ func GetScript(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -115,7 +116,7 @@ func GetScript(c *gin.Context) {
 	content, err := file.ReadScriptContent(scriptID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "读取脚本内容失败",
+			"error": i18n.T(c, "error.script.load_content_failed"),
 		})
 		return
 	}
@@ -133,7 +134,7 @@ func CreateScript(c *gin.Context) {
 	var req models.ScriptCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "请求参数错误: " + err.Error(),
+			"error": i18n.T(c, "error.request.invalid_params", err.Error()),
 		})
 		return
 	}
@@ -149,7 +150,7 @@ func CreateScript(c *gin.Context) {
 	db := database.GetDB()
 	if err := db.Create(&script).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "创建脚本失败",
+			"error": i18n.T(c, "error.script.create_failed"),
 		})
 		return
 	}
@@ -160,14 +161,14 @@ func CreateScript(c *gin.Context) {
 			// 如果保存内容失败，删除已创建的记录
 			db.Delete(&script)
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "保存脚本内容失败",
+				"error": i18n.T(c, "error.script.save_content_failed"),
 			})
 			return
 		}
 	}
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "脚本创建成功 ✅",
+		"message": i18n.T(c, "success.script.created"),
 		"data":    script,
 	})
 }
@@ -177,7 +178,7 @@ func UpdateScript(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -185,7 +186,7 @@ func UpdateScript(c *gin.Context) {
 	var req models.ScriptUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "请求参数错误: " + err.Error(),
+			"error": i18n.T(c, "error.request.invalid_params", err.Error()),
 		})
 		return
 	}
@@ -194,7 +195,7 @@ func UpdateScript(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -217,7 +218,7 @@ func UpdateScript(c *gin.Context) {
 	if len(updates) > 0 {
 		if err := db.Model(&script).Updates(updates).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "更新脚本失败",
+				"error": i18n.T(c, "error.script.update_failed"),
 			})
 			return
 		}
@@ -227,14 +228,14 @@ func UpdateScript(c *gin.Context) {
 	if req.Content != "" {
 		if err := file.SaveScriptContent(scriptID, req.Content); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "更新脚本内容失败",
+				"error": i18n.T(c, "error.script.save_content_failed"),
 			})
 			return
 		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "脚本更新成功 ✅",
+		"message": i18n.T(c, "success.script.updated"),
 	})
 }
 
@@ -243,7 +244,7 @@ func DeleteScript(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -252,7 +253,7 @@ func DeleteScript(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -260,7 +261,7 @@ func DeleteScript(c *gin.Context) {
 	// 删除数据库记录
 	if err := db.Delete(&script).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "删除脚本失败",
+			"error": i18n.T(c, "error.script.delete_failed"),
 		})
 		return
 	}
@@ -278,7 +279,7 @@ func DeleteScript(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "脚本删除成功 ✅",
+		"message": i18n.T(c, "success.script.deleted"),
 	})
 }
 
@@ -287,7 +288,7 @@ func ToggleScript(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -296,7 +297,7 @@ func ToggleScript(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -305,18 +306,18 @@ func ToggleScript(c *gin.Context) {
 	newStatus := !script.Enabled
 	if err := db.Model(&script).Update("enabled", newStatus).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "切换脚本状态失败",
+			"error": i18n.T(c, "error.script.update_failed"),
 		})
 		return
 	}
 
-	statusText := "启用"
+	statusText := i18n.T(c, "status.enabled")
 	if !newStatus {
-		statusText = "禁用"
+		statusText = i18n.T(c, "status.disabled")
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "脚本已" + statusText + " ✅",
+		"message": i18n.T(c, "success.script.updated") + " (" + statusText + ")",
 		"enabled": newStatus,
 	})
 }
@@ -326,7 +327,7 @@ func ExecuteScript(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -335,7 +336,7 @@ func ExecuteScript(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -343,7 +344,7 @@ func ExecuteScript(c *gin.Context) {
 	// 检查脚本是否启用
 	if !script.Enabled {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本已禁用，无法执行",
+			"error": i18n.T(c, "error.webhook.script_not_found"),
 		})
 		return
 	}
@@ -352,14 +353,14 @@ func ExecuteScript(c *gin.Context) {
 	content, err := file.ReadScriptContent(scriptID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "读取脚本内容失败",
+			"error": i18n.T(c, "error.script.load_content_failed"),
 		})
 		return
 	}
 
 	if strings.TrimSpace(content) == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本内容为空",
+			"error": i18n.T(c, "error.script.load_content_failed"),
 		})
 		return
 	}
@@ -369,7 +370,7 @@ func ExecuteScript(c *gin.Context) {
 	result, err := scriptExecutor.ExecuteScript(scriptID, content, script.Executor)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "脚本执行失败: " + err.Error(),
+			"error": i18n.T(c, "error.script.execute_failed") + ": " + err.Error(),
 		})
 		return
 	}
@@ -385,7 +386,7 @@ func ExecuteScript(c *gin.Context) {
 
 	// 返回执行结果
 	c.JSON(http.StatusOK, gin.H{
-		"message": "脚本执行完成 🎯",
+		"message": i18n.T(c, "success.webhook.executed"),
 		"result":  result,
 	})
 }
@@ -395,7 +396,7 @@ func GetScriptLogs(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -405,7 +406,7 @@ func GetScriptLogs(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -414,7 +415,7 @@ func GetScriptLogs(c *gin.Context) {
 	logs, err := file.ReadScriptLog(scriptID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "读取日志失败",
+			"error": i18n.T(c, "error.script.get_failed"),
 		})
 		return
 	}
@@ -429,7 +430,7 @@ func ClearScriptLogs(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -439,7 +440,7 @@ func ClearScriptLogs(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{
-			"error": "脚本不存在",
+			"error": i18n.T(c, "error.script.not_found"),
 		})
 		return
 	}
@@ -447,13 +448,13 @@ func ClearScriptLogs(c *gin.Context) {
 	// 清空日志文件
 	if err := file.ClearScriptLog(scriptID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "清空日志失败",
+			"error": i18n.T(c, "error.script.delete_failed"),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "日志清空成功 🧹",
+		"message": i18n.T(c, "success.script.updated"),
 	})
 }
 

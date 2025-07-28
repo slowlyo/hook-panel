@@ -8,6 +8,7 @@ import {
   Button,
   Form,
   Input,
+  Select,
   message,
   theme,
 } from 'antd';
@@ -25,10 +26,11 @@ import {
   ClockCircleOutlined,
   CalendarOutlined,
   DashboardOutlined,
+  TranslationOutlined,
 } from '@ant-design/icons';
 import { history } from '@umijs/max';
 import { getDashboardStats, DashboardStats } from '@/services/scripts';
-import { getSystemConfigs, updateSystemConfigs, buildConfigUpdateRequest, ConfigCategory } from '@/services/config';
+import { getSystemConfigs, updateSystemConfigs, buildConfigUpdateRequest, ConfigCategory, ConfigResponse } from '@/services/config';
 import { formatDateTime } from '@/utils/dateFormat';
 import styles from './index.less';
 
@@ -41,6 +43,89 @@ const HomePage: React.FC = () => {
   const [configCategories, setConfigCategories] = useState<ConfigCategory[]>([]);
   const [configLoading, setConfigLoading] = useState(false);
   const { token } = theme.useToken();
+
+  // 获取配置项图标
+  const getConfigIcon = (key: string) => {
+    const iconMap: Record<string, React.ReactNode> = {
+      'system.domain': <GlobalOutlined />,
+      'webhook.timeout': <ClockCircleOutlined />,
+      'system.language': <TranslationOutlined />,
+    };
+    return iconMap[key] || <SettingOutlined />;
+  };
+
+  // 渲染配置项表单控件
+  const renderConfigFormItem = (config: ConfigResponse) => {
+    const commonProps = {
+      label: (
+        <Space>
+          {getConfigIcon(config.key)}
+          {config.label}
+        </Space>
+      ),
+      name: config.key,
+      rules: config.required ? [{ required: true, message: `请输入${config.label}` }] : [],
+      tooltip: config.description,
+    };
+
+    switch (config.type) {
+      case 'url':
+        return (
+          <Form.Item
+            {...commonProps}
+            rules={[
+              ...(commonProps.rules || []),
+              { type: 'url', message: '请输入有效的域名格式' },
+            ]}
+          >
+            <Input placeholder="https://your-domain.com" />
+          </Form.Item>
+        );
+
+      case 'number':
+        return (
+          <Form.Item
+            {...commonProps}
+            rules={[
+              ...(commonProps.rules || []),
+              { pattern: /^\d+$/, message: '请输入有效的数字' },
+            ]}
+          >
+            <Input
+              placeholder="30"
+              suffix={config.key === 'webhook.timeout' ? '秒' : undefined}
+              type="number"
+            />
+          </Form.Item>
+        );
+
+      case 'select':
+        let options: { label: string; value: string }[] = [];
+        if (config.options) {
+          try {
+            options = JSON.parse(config.options);
+          } catch (e) {
+            console.error('解析配置选项失败:', e);
+          }
+        }
+
+        return (
+          <Form.Item {...commonProps}>
+            <Select
+              placeholder={`请选择${config.label}`}
+              options={options}
+            />
+          </Form.Item>
+        );
+
+      default:
+        return (
+          <Form.Item {...commonProps}>
+            <Input placeholder={`请输入${config.label}`} />
+          </Form.Item>
+        );
+    }
+  };
 
   // 获取统计数据
   useEffect(() => {
@@ -297,46 +382,15 @@ const HomePage: React.FC = () => {
                 layout="vertical"
                 onFinish={handleSaveConfig}
               >
-                <Form.Item
-                  label={
-                    <Space>
-                      <GlobalOutlined />
-                      系统域名
-                    </Space>
-                  }
-                  name="system.domain"
-                  rules={[
-                    { required: true, message: '请输入系统域名' },
-                    { type: 'url', message: '请输入有效的域名格式' },
-                  ]}
-                  tooltip="用于生成 Webhook URL 的系统域名"
-                >
-                  <Input placeholder="https://your-domain.com" />
-                </Form.Item>
-
-                <Form.Item
-                  label={
-                    <Space>
-                      <ClockCircleOutlined />
-                      执行超时时间
-                    </Space>
-                  }
-                  name="webhook.timeout"
-                  rules={[
-                    { required: true, message: '请输入超时时间' },
-                    {
-                      pattern: /^\d+$/,
-                      message: '请输入有效的数字'
-                    },
-                  ]}
-                  tooltip="脚本执行的超时时间（秒）"
-                >
-                  <Input
-                    placeholder="30"
-                    suffix="秒"
-                    type="number"
-                  />
-                </Form.Item>
+                {configCategories
+                  .filter(category => category.category === 'system')
+                  .map(category =>
+                    category.configs.map(config => (
+                      <div key={config.key}>
+                        {renderConfigFormItem(config)}
+                      </div>
+                    ))
+                  )}
 
                 <Form.Item>
                   <Button

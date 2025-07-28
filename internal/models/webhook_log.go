@@ -17,7 +17,7 @@ type WebhookLog struct {
 	SourceIP     string    `json:"source_ip" gorm:"size:45"`
 	UserAgent    string    `json:"user_agent" gorm:"size:500"`
 	Status       int       `json:"status" gorm:"not null"`
-	ResponseTime int64     `json:"response_time" gorm:"comment:响应时间(毫秒)"`
+	ResponseTime int64     `json:"response_time" gorm:"comment:Response time in milliseconds"`
 	ErrorMsg     string    `json:"error_msg" gorm:"size:1000"`
 	CreatedAt    time.Time `json:"created_at"`
 

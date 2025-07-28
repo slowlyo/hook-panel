@@ -8,6 +8,7 @@ export interface ConfigResponse {
   category: string;
   label: string;
   description: string;
+  options?: string; // JSON格式的选项数据
   required: boolean;
 }
 

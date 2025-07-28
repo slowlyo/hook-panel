@@ -14,6 +14,7 @@ import (
 	"hook-panel/internal/pkg/database"
 	"hook-panel/internal/pkg/executor"
 	"hook-panel/internal/pkg/file"
+	"hook-panel/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -25,18 +26,20 @@ func WebhookHandler(c *gin.Context) {
 	scriptID := c.Param("id")
 
 	if scriptID == "" {
-		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), "Script ID is required")
+		errorMsg := i18n.T(c, "error.request.invalid_params", "Script ID")
+		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), errorMsg)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Script ID is required",
+			"error": errorMsg,
 		})
 		return
 	}
 
 	// 验证签名
 	if !validateWebhookSignature(c, scriptID) {
-		LogWebhookCall(c, scriptID, http.StatusUnauthorized, time.Since(startTime).Milliseconds(), "Invalid signature")
+		errorMsg := i18n.T(c, "error.webhook.invalid_signature")
+		LogWebhookCall(c, scriptID, http.StatusUnauthorized, time.Since(startTime).Milliseconds(), errorMsg)
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error": "Invalid signature",
+			"error": errorMsg,
 		})
 		return
 	}
@@ -46,24 +49,27 @@ func WebhookHandler(c *gin.Context) {
 	var script models.Script
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
-			LogWebhookCall(c, scriptID, http.StatusNotFound, time.Since(startTime).Milliseconds(), "Script not found")
+			errorMsg := i18n.T(c, "error.webhook.script_not_found")
+			LogWebhookCall(c, scriptID, http.StatusNotFound, time.Since(startTime).Milliseconds(), errorMsg)
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Script not found",
+				"error": errorMsg,
 			})
 			return
 		}
+		errorMsg := i18n.T(c, "error.database.query_failed")
 		LogWebhookCall(c, scriptID, http.StatusInternalServerError, time.Since(startTime).Milliseconds(), "Database error: "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Database error",
+			"error": errorMsg,
 		})
 		return
 	}
 
 	// 检查脚本是否启用
 	if !script.Enabled {
-		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), "Script is disabled")
+		errorMsg := i18n.T(c, "error.webhook.script_not_found")
+		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), errorMsg)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Script is disabled",
+			"error": errorMsg,
 		})
 		return
 	}
@@ -71,17 +77,19 @@ func WebhookHandler(c *gin.Context) {
 	// 读取脚本内容
 	content, err := file.ReadScriptContent(scriptID)
 	if err != nil {
+		errorMsg := i18n.T(c, "error.script.load_content_failed")
 		LogWebhookCall(c, scriptID, http.StatusInternalServerError, time.Since(startTime).Milliseconds(), "Failed to read script content: "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Failed to read script content",
+			"error": errorMsg,
 		})
 		return
 	}
 
 	if strings.TrimSpace(content) == "" {
-		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), "Script content is empty")
+		errorMsg := i18n.T(c, "error.script.load_content_failed")
+		LogWebhookCall(c, scriptID, http.StatusBadRequest, time.Since(startTime).Milliseconds(), errorMsg)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Script content is empty",
+			"error": errorMsg,
 		})
 		return
 	}
@@ -100,7 +108,7 @@ func WebhookHandler(c *gin.Context) {
 		scriptExecutor := executor.NewScriptExecutor(60 * time.Second)
 		_, err := scriptExecutor.ExecuteScript(scriptID, content, script.Executor)
 		if err != nil {
-			// 记录错误日志，但不影响 webhook 响应
+			// Record error log, but don't affect webhook response
 			fmt.Printf("Script execution error for %s: %v\n", scriptID, err)
 		}
 	}()
@@ -111,7 +119,7 @@ func WebhookHandler(c *gin.Context) {
 	// 返回符合 webhook 规范的响应
 	c.JSON(http.StatusOK, gin.H{
 		"status":  "success",
-		"message": "Webhook received and script queued for execution",
+		"message": i18n.T(c, "success.webhook.executed"),
 		"data": gin.H{
 			"script_id":   scriptID,
 			"script_name": script.Name,
@@ -155,7 +163,7 @@ func GetWebhookURL(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -166,12 +174,12 @@ func GetWebhookURL(c *gin.Context) {
 	if err := db.First(&script, "id = ?", scriptID).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			c.JSON(http.StatusNotFound, gin.H{
-				"error": "脚本不存在",
+				"error": i18n.T(c, "error.script.not_found"),
 			})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "数据库错误",
+			"error": i18n.T(c, "error.database.query_failed"),
 		})
 		return
 	}
@@ -183,7 +191,7 @@ func GetWebhookURL(c *gin.Context) {
 	domain, err := GetConfigValue("system.domain")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "获取系统域名配置失败",
+			"error": i18n.T(c, "error.config.get_failed"),
 		})
 		return
 	}

@@ -6,6 +6,7 @@ import (
 
 	"hook-panel/internal/models"
 	"hook-panel/internal/pkg/database"
+	"hook-panel/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ func GetDashboardStats(c *gin.Context) {
 	// 统计脚本数量
 	if err := db.Model(&models.Script{}).Count(&stats.TotalScripts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询脚本总数失败",
+			"error": i18n.T(c, "error.script.get_failed"),
 		})
 		return
 	}
@@ -27,7 +28,7 @@ func GetDashboardStats(c *gin.Context) {
 	// 统计启用的脚本数量
 	if err := db.Model(&models.Script{}).Where("enabled = ?", true).Count(&stats.EnabledScripts).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询启用脚本数量失败",
+			"error": i18n.T(c, "error.script.get_failed"),
 		})
 		return
 	}
@@ -38,7 +39,7 @@ func GetDashboardStats(c *gin.Context) {
 	// 统计总调用次数
 	if err := db.Model(&models.WebhookLog{}).Count(&stats.TotalCalls).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询总调用次数失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -48,7 +49,7 @@ func GetDashboardStats(c *gin.Context) {
 		Where("status >= 200 AND status < 300").
 		Count(&stats.SuccessCalls).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询成功调用次数失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -67,7 +68,7 @@ func GetDashboardStats(c *gin.Context) {
 		Select("AVG(response_time)").
 		Scan(&avgResponse).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询平均响应时间失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -82,7 +83,7 @@ func GetDashboardStats(c *gin.Context) {
 	if err := db.Order("created_at DESC").First(&lastLog).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "查询最近调用时间失败",
+				"error": i18n.T(c, "error.webhook.get_logs_failed"),
 			})
 			return
 		}
@@ -96,7 +97,7 @@ func GetDashboardStats(c *gin.Context) {
 		Where("DATE(created_at) = ?", today).
 		Count(&stats.TodayCalls).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询今日调用次数失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}

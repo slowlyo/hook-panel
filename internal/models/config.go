@@ -16,6 +16,7 @@ type SystemConfig struct {
 	Category    string    `json:"category" gorm:"not null;size:50;default:general" binding:"required"`
 	Label       string    `json:"label" gorm:"not null;size:200" binding:"required"`
 	Description string    `json:"description" gorm:"size:500"`
+	Options     string    `json:"options" gorm:"type:text"` // JSON格式的选项数据，用于select类型
 	Required    bool      `json:"required" gorm:"default:false"`
 	Encrypted   bool      `json:"encrypted" gorm:"default:false"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -54,6 +55,7 @@ type ConfigResponse struct {
 	Category    string `json:"category"`
 	Label       string `json:"label"`
 	Description string `json:"description"`
+	Options     string `json:"options,omitempty"` // JSON格式的选项数据
 	Required    bool   `json:"required"`
 }
 
@@ -71,8 +73,8 @@ var DefaultSystemConfigs = []SystemConfig{
 		Value:       "",
 		Type:        "url",
 		Category:    "system",
-		Label:       "系统域名",
-		Description: "系统访问域名，用于生成 Webhook URL",
+		Label:       "config.system_domain.label", // 使用翻译key
+		Description: "config.system_domain.description",
 		Required:    true,
 		Encrypted:   false,
 	},
@@ -81,8 +83,19 @@ var DefaultSystemConfigs = []SystemConfig{
 		Value:       "60",
 		Type:        "number",
 		Category:    "system",
-		Label:       "执行超时时间",
-		Description: "脚本执行超时时间（秒）",
+		Label:       "config.webhook_timeout.label",
+		Description: "config.webhook_timeout.description",
+		Required:    false,
+		Encrypted:   false,
+	},
+	{
+		Key:         "system.language",
+		Value:       "zh-CN",
+		Type:        "select",
+		Category:    "system",
+		Label:       "config.system_language.label",
+		Description: "config.system_language.description",
+		Options:     `[{"label":"中文","value":"zh-CN"},{"label":"English","value":"en-US"}]`,
 		Required:    false,
 		Encrypted:   false,
 	},

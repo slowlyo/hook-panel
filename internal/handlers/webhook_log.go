@@ -9,6 +9,7 @@ import (
 
 	"hook-panel/internal/models"
 	"hook-panel/internal/pkg/database"
+	"hook-panel/internal/pkg/i18n"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -19,7 +20,7 @@ func GetWebhookLogs(c *gin.Context) {
 	var req models.WebhookLogListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "请求参数错误: " + err.Error(),
+			"error": i18n.T(c, "error.request.invalid_params", err.Error()),
 		})
 		return
 	}
@@ -69,7 +70,7 @@ func GetWebhookLogs(c *gin.Context) {
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询总数失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -100,7 +101,7 @@ func GetWebhookLogs(c *gin.Context) {
 		Offset(offset).
 		Find(&logs).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询记录失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -118,7 +119,7 @@ func GetWebhookLogStats(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -131,7 +132,7 @@ func GetWebhookLogStats(c *gin.Context) {
 		Where("script_id = ?", scriptID).
 		Count(&stats.TotalCalls).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询统计失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -141,7 +142,7 @@ func GetWebhookLogStats(c *gin.Context) {
 		Where("script_id = ? AND status >= 200 AND status < 300", scriptID).
 		Count(&stats.SuccessCalls).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询成功统计失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -161,7 +162,7 @@ func GetWebhookLogStats(c *gin.Context) {
 		Select("AVG(response_time)").
 		Scan(&avgResponse).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "查询平均响应时间失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
@@ -178,7 +179,7 @@ func GetWebhookLogStats(c *gin.Context) {
 		First(&lastLog).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "查询最近调用时间失败",
+				"error": i18n.T(c, "error.webhook.get_logs_failed"),
 			})
 			return
 		}
@@ -194,7 +195,7 @@ func ClearWebhookLogs(c *gin.Context) {
 	scriptID := c.Param("id")
 	if scriptID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "脚本 ID 不能为空",
+			"error": i18n.T(c, "error.request.invalid_params", "Script ID"),
 		})
 		return
 	}
@@ -205,13 +206,13 @@ func ClearWebhookLogs(c *gin.Context) {
 	result := db.Where("script_id = ?", scriptID).Delete(&models.WebhookLog{})
 	if result.Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "清空记录失败",
+			"error": i18n.T(c, "error.webhook.get_logs_failed"),
 		})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "调用记录已清空 🗑️",
+		"message": i18n.T(c, "success.script.deleted"),
 		"deleted": result.RowsAffected,
 	})
 }
@@ -256,7 +257,7 @@ func LogWebhookCall(c *gin.Context, scriptID string, status int, responseTime in
 		db := database.GetDB()
 		if err := db.Create(&log).Error; err != nil {
 			// 记录错误但不影响主流程
-			println("保存 webhook 日志失败:", err.Error())
+			println("Failed to save webhook log:", err.Error())
 		}
 	}()
 }

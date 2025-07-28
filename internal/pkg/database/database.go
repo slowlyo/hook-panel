@@ -20,25 +20,25 @@ func InitDatabase(port string) error {
 	// 确保 data 目录存在
 	dataDir := "./data"
 	if err := os.MkdirAll(dataDir, 0755); err != nil {
-		return fmt.Errorf("创建 data 目录失败: %v", err)
+		return fmt.Errorf("failed to create data directory: %v", err)
 	}
 
 	// 确保 scripts 目录存在
 	scriptsDir := filepath.Join(dataDir, "scripts")
 	if err := os.MkdirAll(scriptsDir, 0755); err != nil {
-		return fmt.Errorf("创建 scripts 目录失败: %v", err)
+		return fmt.Errorf("failed to create scripts directory: %v", err)
 	}
 
 	// 确保 logs 目录存在
 	logsDir := filepath.Join(dataDir, "logs")
 	if err := os.MkdirAll(logsDir, 0755); err != nil {
-		return fmt.Errorf("创建 logs 目录失败: %v", err)
+		return fmt.Errorf("failed to create logs directory: %v", err)
 	}
 
 	// 确保 temp 目录存在
 	tempDir := filepath.Join(dataDir, "temp")
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
-		return fmt.Errorf("创建 temp 目录失败: %v", err)
+		return fmt.Errorf("failed to create temp directory: %v", err)
 	}
 
 	// 数据库文件路径
@@ -50,20 +50,20 @@ func InitDatabase(port string) error {
 		Logger: logger.Default.LogMode(logger.Silent), // 生产环境静默日志
 	})
 	if err != nil {
-		return fmt.Errorf("连接数据库失败: %v", err)
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	// 自动迁移
 	if err := DB.AutoMigrate(&models.Script{}, &models.WebhookLog{}, &models.SystemConfig{}); err != nil {
-		return fmt.Errorf("数据库迁移失败: %v", err)
+		return fmt.Errorf("failed to migrate database: %v", err)
 	}
 
 	// 初始化默认系统配置
 	if err := initDefaultConfigs(port); err != nil {
-		return fmt.Errorf("初始化默认配置失败: %v", err)
+		return fmt.Errorf("failed to initialize default configs: %v", err)
 	}
 
-	log.Println("📦 数据库初始化成功")
+	log.Println("📦 Database initialized successfully")
 	return nil
 }
 
@@ -100,10 +100,10 @@ func initDefaultConfigs(port string) error {
 				}
 
 				if err := DB.Create(&newConfig).Error; err != nil {
-					return fmt.Errorf("创建默认配置 %s 失败: %v", config.Key, err)
+					return fmt.Errorf("failed to create default config %s: %v", config.Key, err)
 				}
 			} else {
-				return fmt.Errorf("查询配置 %s 失败: %v", config.Key, err)
+				return fmt.Errorf("failed to query config %s: %v", config.Key, err)
 			}
 		}
 		// 配置已存在，跳过

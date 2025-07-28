@@ -15,7 +15,7 @@ const (
 func SaveScriptContent(scriptID, content string) error {
 	// 确保目录存在
 	if err := os.MkdirAll(ScriptsDir, 0755); err != nil {
-		return fmt.Errorf("创建脚本目录失败: %v", err)
+		return fmt.Errorf("failed to create scripts directory: %v", err)
 	}
 
 	// 脚本文件路径
@@ -23,7 +23,7 @@ func SaveScriptContent(scriptID, content string) error {
 
 	// 写入文件
 	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
-		return fmt.Errorf("保存脚本内容失败: %v", err)
+		return fmt.Errorf("failed to save script content: %v", err)
 	}
 
 	return nil
@@ -41,7 +41,7 @@ func ReadScriptContent(scriptID string) (string, error) {
 	// 读取文件内容
 	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return "", fmt.Errorf("读取脚本内容失败: %v", err)
+		return "", fmt.Errorf("failed to read script content: %v", err)
 	}
 
 	return string(content), nil
@@ -58,7 +58,7 @@ func DeleteScriptContent(scriptID string) error {
 
 	// 删除文件
 	if err := os.Remove(filePath); err != nil {
-		return fmt.Errorf("删除脚本内容失败: %v", err)
+		return fmt.Errorf("failed to delete script content: %v", err)
 	}
 
 	return nil
@@ -68,7 +68,7 @@ func DeleteScriptContent(scriptID string) error {
 func SaveScriptLog(scriptID, logContent string) error {
 	// 确保日志目录存在
 	if err := os.MkdirAll(LogsDir, 0755); err != nil {
-		return fmt.Errorf("创建日志目录失败: %v", err)
+		return fmt.Errorf("failed to create logs directory: %v", err)
 	}
 
 	// 日志文件路径
@@ -77,13 +77,13 @@ func SaveScriptLog(scriptID, logContent string) error {
 	// 追加写入日志文件
 	file, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
-		return fmt.Errorf("打开日志文件失败: %v", err)
+		return fmt.Errorf("failed to open log file: %v", err)
 	}
 	defer file.Close()
 
 	// 写入日志内容
 	if _, err := file.WriteString(logContent); err != nil {
-		return fmt.Errorf("写入日志失败: %v", err)
+		return fmt.Errorf("failed to write log: %v", err)
 	}
 
 	return nil
@@ -101,7 +101,7 @@ func ReadScriptLog(scriptID string) (string, error) {
 	// 读取日志内容
 	content, err := os.ReadFile(logPath)
 	if err != nil {
-		return "", fmt.Errorf("读取日志文件失败: %v", err)
+		return "", fmt.Errorf("failed to read log file: %v", err)
 	}
 
 	return string(content), nil
@@ -118,7 +118,7 @@ func DeleteScriptLog(scriptID string) error {
 
 	// 删除文件
 	if err := os.Remove(logPath); err != nil {
-		return fmt.Errorf("删除日志文件失败: %v", err)
+		return fmt.Errorf("failed to delete log file: %v", err)
 	}
 
 	return nil
@@ -135,7 +135,7 @@ func ClearScriptLog(scriptID string) error {
 
 	// 清空文件内容
 	if err := os.WriteFile(logPath, []byte(""), 0644); err != nil {
-		return fmt.Errorf("清空日志文件失败: %v", err)
+		return fmt.Errorf("failed to clear log file: %v", err)
 	}
 
 	return nil
