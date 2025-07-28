@@ -21,8 +21,9 @@ import {
   FileTextOutlined,
   LinkOutlined,
 } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { ScriptForm, ScriptItem, LogsModal, ExecutionResultModal, WebhookModal } from './components';
-import { getScripts, getScript, deleteScript as deleteScriptAPI, toggleScript, createScript, executeScript, getScriptLogs, ExecutionResult } from '@/services/scripts';
+import { getScripts, getScript, deleteScript as deleteScriptAPI, toggleScript, createScript, executeScript, ExecutionResult } from '@/services/scripts';
 import { getExecutorValueEnum, getExecutorRenderConfig } from '@/constants/executors';
 import ActionButton from '@/components/ActionButton';
 import { formatDateTime } from '@/utils/dateFormat';
@@ -41,28 +42,29 @@ const ScriptsPage: React.FC = () => {
   const [copyingScriptId, setCopyingScriptId] = useState<string | null>(null);
   const [executedScript, setExecutedScript] = useState<ScriptItem | null>(null);
   const actionRef = useRef<ActionType>();
+  const intl = useIntl();
 
 
 
 
 
-  // 获取脚本列表 - 使用标准的 ProTable request 格式
-  const fetchScripts = async (params: any, sort: any, filter: any) => {
+  // Get script list - using standard ProTable request format
+  const fetchScripts = async (params: any, sort: any) => {
     try {
       const { current, pageSize, ...rest } = params;
 
-      // 处理排序参数
+      // Handle sort parameters
       let sort_field = undefined;
       let sort_order = undefined;
       if (sort && Object.keys(sort).length > 0) {
-        // 获取第一个排序字段
+        // Get first sort field
         const fieldName = Object.keys(sort)[0];
         const order = sort[fieldName];
         sort_field = fieldName;
         sort_order = order === 'ascend' ? 'asc' : 'desc';
       }
 
-      // 构建查询参数
+      // Build query parameters
       const queryParams: any = {
         page: current || 1,
         page_size: pageSize || 20,
@@ -71,29 +73,29 @@ const ScriptsPage: React.FC = () => {
         ...rest,
       };
 
-      // 处理搜索关键词
+      // Handle search keywords
       if (params?.name || params?.description) {
         queryParams.search = params.name || params.description || '';
       }
 
-      // 处理状态筛选
+      // Handle status filter
       if (params?.status) {
         queryParams.enabled = params.status === 'enabled';
       }
 
-      // 处理执行器筛选
+      // Handle executor filter
       if (params?.executor) {
         queryParams.executor = params.executor;
       }
 
       const response = await getScripts(queryParams);
 
-      // 转换数据格式以适配前端显示
+      // Transform data format for frontend display
       const transformedData = response.data.map(script => ({
         id: script.id,
         name: script.name,
         description: script.description,
-        content: '', // 列表页不需要内容
+        content: '', // List page doesn't need content
         executor: script.executor,
         status: script.enabled ? 'enabled' as const : 'disabled' as const,
         trigger: 'webhook' as const,
@@ -109,7 +111,7 @@ const ScriptsPage: React.FC = () => {
         total: response.total,
       };
     } catch (error) {
-      console.error('获取脚本列表失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.load_error' }), error);
       return {
         data: [],
         success: false,
@@ -118,16 +120,16 @@ const ScriptsPage: React.FC = () => {
     }
   };
 
-  // 切换脚本状态
+  // Toggle script status
   const toggleStatus = async (record: ScriptItem) => {
     try {
       const response = await toggleScript(record.id);
       message.success(response.message);
       actionRef.current?.reload();
     } catch (error: any) {
-      console.error('切换脚本状态失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.toggle_error' }), error);
 
-      let errorMessage = '操作失败，请重试';
+      let errorMessage = intl.formatMessage({ id: 'scripts.operation_failed' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -138,16 +140,16 @@ const ScriptsPage: React.FC = () => {
     }
   };
 
-  // 删除脚本
+  // Delete script
   const deleteScript = async (id: string) => {
     try {
       const response = await deleteScriptAPI(id);
       message.success(response.message);
       actionRef.current?.reload();
     } catch (error: any) {
-      console.error('删除脚本失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.delete_failed' }), error);
 
-      let errorMessage = '删除失败，请重试';
+      let errorMessage = intl.formatMessage({ id: 'scripts.delete_failed' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -158,33 +160,33 @@ const ScriptsPage: React.FC = () => {
     }
   };
 
-  // 复制脚本
+  // Copy script
   const copyScript = async (record: ScriptItem) => {
     if (copyingScriptId) {
-      message.warning('有脚本正在复制中，请稍后再试');
+      message.warning(intl.formatMessage({ id: 'scripts.copy_in_progress' }));
       return;
     }
 
     setCopyingScriptId(record.id);
     try {
-      // 先获取完整的脚本内容
+      // First get complete script content
       const fullScript = await getScript(record.id);
 
       const newScriptData = {
-        name: `${record.name} (副本)`,
+        name: `${record.name}${intl.formatMessage({ id: 'scripts.copy_suffix' })}`,
         description: record.description,
-        content: fullScript.content, // 使用获取到的完整内容
-        executor: fullScript.executor, // 使用相同的执行器
-        enabled: false, // 副本默认禁用
+        content: fullScript.content, // Use retrieved complete content
+        executor: fullScript.executor, // Use same executor
+        enabled: false, // Copy is disabled by default
       };
 
       const response = await createScript(newScriptData);
       message.success(response.message);
       actionRef.current?.reload();
     } catch (error: any) {
-      console.error('复制脚本失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.copy_failed' }), error);
 
-      let errorMessage = '复制失败，请重试';
+      let errorMessage = intl.formatMessage({ id: 'scripts.copy_failed' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -197,17 +199,17 @@ const ScriptsPage: React.FC = () => {
     }
   };
 
-  // 表单提交成功回调
+  // Form submit success callback
   const handleFormSuccess = () => {
     setFormVisible(false);
     setCurrentRecord(null);
     actionRef.current?.reload();
   };
 
-  // 执行脚本
+  // Execute script
   const runScript = async (record: ScriptItem) => {
     if (executingScriptId) {
-      message.warning('有脚本正在执行中，请稍后再试');
+      message.warning(intl.formatMessage({ id: 'scripts.execute_in_progress' }));
       return;
     }
 
@@ -215,25 +217,25 @@ const ScriptsPage: React.FC = () => {
     try {
       const response = await executeScript(record.id);
 
-      // 检查执行结果
+      // Check execution result
       if (response.result.success) {
-        message.success(`脚本 "${record.name}" 执行成功 ✅`);
+        message.success(intl.formatMessage({ id: 'scripts.execute_success_msg' }, { name: record.name }));
       } else {
-        message.warning(`脚本 "${record.name}" 执行完成，但有错误 ⚠️`);
+        message.warning(intl.formatMessage({ id: 'scripts.execute_warning_msg' }, { name: record.name }));
       }
 
-      // 显示执行结果
+      // Show execution result
       setExecutionResult(response.result);
       setExecutedScript(record);
       setExecutionResultModalVisible(true);
 
-      // 刷新数据以显示最新的调用次数
+      // Refresh data to show latest call count
       actionRef.current?.reload();
     } catch (error: any) {
-      console.error('脚本执行失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.execute_failed' }), error);
 
-      // 提取后端返回的具体错误信息
-      let errorMessage = '脚本执行失败，请重试';
+      // Extract specific error message from backend
+      let errorMessage = intl.formatMessage({ id: 'scripts.execute_failed' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -246,22 +248,22 @@ const ScriptsPage: React.FC = () => {
     }
   };
 
-  // 查看日志
+  // View logs
   const viewLogs = (record: ScriptItem) => {
     setCurrentRecord(record);
     setLogsModalVisible(true);
   };
 
-  // 查看 webhook
+  // View webhook
   const viewWebhook = (record: ScriptItem) => {
     setCurrentRecord(record);
     setWebhookModalVisible(true);
   };
 
-  // 表格列定义
+  // Table column definitions
   const columns: ProColumns<ScriptItem>[] = [
     {
-      title: '脚本名称',
+      title: intl.formatMessage({ id: 'scripts.script_name' }),
       dataIndex: 'name',
       width: 200,
       ellipsis: true,
@@ -273,32 +275,32 @@ const ScriptsPage: React.FC = () => {
       ),
     },
     {
-      title: '描述',
+      title: intl.formatMessage({ id: 'scripts.description' }),
       dataIndex: 'description',
       ellipsis: true,
       search: false,
     },
 
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'scripts.status' }),
       dataIndex: 'status',
       width: 100,
       valueType: 'select',
       valueEnum: {
-        enabled: { text: '启用', status: 'Success' },
-        disabled: { text: '禁用', status: 'Default' },
+        enabled: { text: intl.formatMessage({ id: 'scripts.enabled' }), status: 'Success' },
+        disabled: { text: intl.formatMessage({ id: 'scripts.disabled' }), status: 'Default' },
       },
       render: (_, record) => (
         <Switch
           checked={record.status === 'enabled'}
           onChange={() => toggleStatus(record)}
-          checkedChildren="启用"
-          unCheckedChildren="禁用"
+          checkedChildren={intl.formatMessage({ id: 'scripts.enabled' })}
+          unCheckedChildren={intl.formatMessage({ id: 'scripts.disabled' })}
         />
       ),
     },
     {
-      title: '执行器',
+      title: intl.formatMessage({ id: 'scripts.executor' }),
       dataIndex: 'executor',
       width: 120,
       valueType: 'select',
@@ -315,7 +317,7 @@ const ScriptsPage: React.FC = () => {
       },
     },
     {
-      title: '调用次数',
+      title: intl.formatMessage({ id: 'scripts.call_count' }),
       dataIndex: 'callCount',
       width: 100,
       search: false,
@@ -327,7 +329,7 @@ const ScriptsPage: React.FC = () => {
       ),
     },
     {
-      title: '最近调用',
+      title: intl.formatMessage({ id: 'scripts.last_call' }),
       dataIndex: 'lastCallTime',
       width: 180,
       search: false,
@@ -336,13 +338,13 @@ const ScriptsPage: React.FC = () => {
         const formattedTime = record.lastCallTime ? formatDateTime(record.lastCallTime) : null;
         return (
           <span style={{ color: formattedTime ? '#666' : '#ccc' }}>
-            {formattedTime || '从未调用'}
+            {formattedTime || intl.formatMessage({ id: 'scripts.never_called' })}
           </span>
         );
       },
     },
     {
-      title: '创建时间',
+      title: intl.formatMessage({ id: 'scripts.created_at' }),
       dataIndex: 'createdAt',
       width: 180,
       search: false,
@@ -354,13 +356,13 @@ const ScriptsPage: React.FC = () => {
       ),
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'scripts.action' }),
       valueType: 'option',
       width: 250,
       render: (_, record) => [
         <ActionButton
           key="exec"
-          tooltip="执行"
+          tooltip={intl.formatMessage({ id: 'scripts.tooltip_execute' })}
           color="#52c41a"
           icon={<PlayCircleOutlined />}
           onClick={() => runScript(record)}
@@ -370,21 +372,21 @@ const ScriptsPage: React.FC = () => {
         />,
         <ActionButton
           key="logs"
-          tooltip="查看日志"
+          tooltip={intl.formatMessage({ id: 'scripts.tooltip_logs' })}
           color="#1677ff"
           icon={<FileTextOutlined />}
           onClick={() => viewLogs(record)}
         />,
         <ActionButton
           key="webhook"
-          tooltip="Webhook"
+          tooltip={intl.formatMessage({ id: 'scripts.tooltip_webhook' })}
           color="#13c2c2"
           icon={<LinkOutlined />}
           onClick={() => viewWebhook(record)}
         />,
         <ActionButton
           key="edit"
-          tooltip="编辑"
+          tooltip={intl.formatMessage({ id: 'scripts.tooltip_edit' })}
           color="#fa8c16"
           icon={<EditOutlined />}
           onClick={() => {
@@ -394,7 +396,7 @@ const ScriptsPage: React.FC = () => {
         />,
         <ActionButton
           key="copy"
-          tooltip="复制"
+          tooltip={intl.formatMessage({ id: 'scripts.tooltip_copy' })}
           color="#722ed1"
           icon={<CopyOutlined />}
           onClick={() => copyScript(record)}
@@ -402,14 +404,14 @@ const ScriptsPage: React.FC = () => {
         />,
         <Popconfirm
           key="delete"
-          title="确认删除"
-          description="删除后无法恢复，确定要删除这个脚本吗？"
+          title={intl.formatMessage({ id: 'scripts.confirm_delete' })}
+          description={intl.formatMessage({ id: 'scripts.confirm_delete_desc' })}
           onConfirm={() => deleteScript(record.id)}
-          okText="确认"
-          cancelText="取消"
+          okText={intl.formatMessage({ id: 'scripts.confirm' })}
+          cancelText={intl.formatMessage({ id: 'scripts.cancel' })}
         >
           <ActionButton
-            tooltip="删除"
+            tooltip={intl.formatMessage({ id: 'scripts.tooltip_delete' })}
             color="#ff4d4f"
             icon={<DeleteOutlined />}
           />
@@ -437,7 +439,7 @@ const ScriptsPage: React.FC = () => {
         }}
         scroll={{ x: 1200 }}
         dateFormatter="string"
-        headerTitle="脚本列表"
+        headerTitle={intl.formatMessage({ id: 'scripts.list_title' })}
         toolBarRender={() => [
           <Button
             key="create"
@@ -448,12 +450,12 @@ const ScriptsPage: React.FC = () => {
               setFormVisible(true);
             }}
           >
-            新建脚本
+            {intl.formatMessage({ id: 'scripts.new_script' })}
           </Button>,
         ]}
       />
 
-      {/* 脚本表单弹窗 */}
+      {/* Script Form Modal */}
       <ScriptForm
         visible={formVisible}
         record={currentRecord}
@@ -464,7 +466,7 @@ const ScriptsPage: React.FC = () => {
         onSuccess={handleFormSuccess}
       />
 
-      {/* 日志查看弹窗 */}
+      {/* Logs View Modal */}
       <LogsModal
         visible={logsModalVisible}
         onCancel={() => {
@@ -475,7 +477,7 @@ const ScriptsPage: React.FC = () => {
         scriptName={currentRecord?.name || ''}
       />
 
-      {/* 执行结果弹窗 */}
+      {/* Execution Result Modal */}
       <ExecutionResultModal
         visible={executionResultModalVisible}
         onCancel={() => {
@@ -487,7 +489,7 @@ const ScriptsPage: React.FC = () => {
         scriptName={executedScript?.name || ''}
       />
 
-      {/* Webhook 弹窗 */}
+      {/* Webhook Modal */}
       <WebhookModal
         visible={webhookModalVisible}
         onCancel={() => {

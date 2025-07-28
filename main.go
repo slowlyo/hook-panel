@@ -176,8 +176,12 @@ func main() {
 	// 健康检查接口（无需认证）
 	r.GET("/health", handlers.HealthCheck)
 
-	// Webhook 路由（无需认证，使用签名验证）
-	r.POST("/h/:id", handlers.WebhookHandler)
+	// Webhook 路由（无需认证，使用签名验证，但需要i18n支持）
+	webhook := r.Group("/h")
+	webhook.Use(middleware.I18nMiddleware())
+	{
+		webhook.POST("/:id", handlers.WebhookHandler)
+	}
 
 	// 需要认证的路由组
 	api := r.Group("/api")

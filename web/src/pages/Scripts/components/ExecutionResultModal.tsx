@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Result, Descriptions, Tag, Button, message } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, CopyOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { ExecutionResult } from '@/services/scripts';
 import OutputDisplay from '@/components/OutputDisplay';
 import './ExecutionResultModal.less';
@@ -18,13 +19,15 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
   result,
   scriptName,
 }) => {
+  const intl = useIntl();
+
   if (!result) return null;
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
-      message.success('复制成功 📋');
+      message.success(intl.formatMessage({ id: 'scripts.execution.copy_success' }));
     }).catch(() => {
-      message.error('复制失败');
+      message.error(intl.formatMessage({ id: 'scripts.execution.copy_failed' }));
     });
   };
 
@@ -42,13 +45,13 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
 
   return (
     <Modal
-      title={`🎯 执行结果 - ${scriptName}`}
+      title={`🎯 ${intl.formatMessage({ id: 'scripts.execution.title' }, { name: scriptName })}`}
       open={visible}
       onCancel={onCancel}
       width={800}
       footer={[
         <Button key="close" onClick={onCancel}>
-          关闭
+          {intl.formatMessage({ id: 'scripts.execution.close' })}
         </Button>,
       ]}
       destroyOnHidden
@@ -56,25 +59,25 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
     >
       <Result
         icon={getStatusIcon()}
-        title={result.success ? '执行成功' : '执行失败'}
-        subTitle={`脚本于 ${result.timestamp} 执行完成`}
+        title={result.success ? intl.formatMessage({ id: 'scripts.execution.success_title' }) : intl.formatMessage({ id: 'scripts.execution.failed_title' })}
+        subTitle={intl.formatMessage({ id: 'scripts.execution.completed_at' }, { time: result.timestamp })}
       />
 
       <Descriptions bordered column={2} size="small">
-        <Descriptions.Item label="执行状态" span={1}>
+        <Descriptions.Item label={intl.formatMessage({ id: 'scripts.execution.status_label' })} span={1}>
           <Tag color={getStatusColor()}>
-            {result.success ? '成功' : '失败'}
+            {result.success ? intl.formatMessage({ id: 'scripts.execution.success_status' }) : intl.formatMessage({ id: 'scripts.execution.failed_status' })}
           </Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="退出码" span={1}>
+        <Descriptions.Item label={intl.formatMessage({ id: 'scripts.execution.exit_code_label' })} span={1}>
           <Tag color={result.exit_code === 0 ? 'green' : 'red'}>
             {result.exit_code}
           </Tag>
         </Descriptions.Item>
-        <Descriptions.Item label="执行时间" span={1}>
+        <Descriptions.Item label={intl.formatMessage({ id: 'scripts.execution.time_label' })} span={1}>
           {result.timestamp}
         </Descriptions.Item>
-        <Descriptions.Item label="耗时" span={1}>
+        <Descriptions.Item label={intl.formatMessage({ id: 'scripts.execution.duration_label' })} span={1}>
           {result.duration}
         </Descriptions.Item>
       </Descriptions>
@@ -82,7 +85,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
       {result.output && (
         <div className="outputSection">
           <div className="sectionHeader">
-            <span className="sectionTitle">标准输出:</span>
+            <span className="sectionTitle">{intl.formatMessage({ id: 'scripts.execution.stdout_title' })}:</span>
             <Button
               type="text"
               size="small"
@@ -90,7 +93,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               onClick={() => copyToClipboard(result.output)}
               className="copyButton"
             >
-              复制
+              {intl.formatMessage({ id: 'scripts.execution.copy' })}
             </Button>
           </div>
           <OutputDisplay
@@ -98,7 +101,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
             maxHeight={200}
             minHeight={50}
             autoScrollToBottom={false}
-            emptyDescription="无输出内容"
+            emptyDescription={intl.formatMessage({ id: 'scripts.execution.no_output' })}
             className="dark-theme"
             fontSize={12}
             lineHeight={1.4}
@@ -112,7 +115,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
       {result.error && (
         <div className="outputSection">
           <div className="sectionHeader">
-            <span className="sectionTitle" style={{ color: '#ff6b6b' }}>错误输出:</span>
+            <span className="sectionTitle" style={{ color: '#ff6b6b' }}>{intl.formatMessage({ id: 'scripts.execution.stderr_title' })}:</span>
             <Button
               type="text"
               size="small"
@@ -120,7 +123,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               onClick={() => copyToClipboard(result.error)}
               className="copyButton"
             >
-              复制
+              {intl.formatMessage({ id: 'scripts.execution.copy' })}
             </Button>
           </div>
           <OutputDisplay
@@ -128,7 +131,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
             maxHeight={200}
             minHeight={50}
             autoScrollToBottom={false}
-            emptyDescription="无错误输出"
+            emptyDescription={intl.formatMessage({ id: 'scripts.execution.no_error' })}
             className="error-theme"
             fontSize={12}
             lineHeight={1.4}

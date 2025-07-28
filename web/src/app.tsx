@@ -1,8 +1,9 @@
-// 运行时配置
+// Runtime configuration
 import webhook from './assets/webhook.png';
 import { isAuthenticated, getStoredAccessKey } from './utils/auth';
-import { history, RuntimeAntdConfig } from '@umijs/max';
+import { history, RuntimeAntdConfig, RuntimeConfig, setLocale } from '@umijs/max';
 import { Space, theme, message } from 'antd';
+import { getSystemConfigs, getConfigValue } from '@/services/config';
 
 import ThemeToggle from '@/components/ThemeToggle';
 import LogoutButton from '@/components/LogoutButton';
@@ -10,36 +11,56 @@ import LogoutButton from '@/components/LogoutButton';
 const { darkAlgorithm, defaultAlgorithm } = theme;
 const THEME_STORAGE_KEY = 'hook-panel-theme';
 
-// 全局初始化数据配置，用于 Layout 用户信息和权限初始化
-// 更多信息见文档：https://umijs.org/docs/api/runtime-config#getinitialstate
+// Global initialization data configuration for Layout user info and permission initialization
+// More info: https://umijs.org/docs/api/runtime-config#getinitialstate
 export async function getInitialState(): Promise<any> {
-  // 检查当前路径是否为认证页面
+  // Check if current path is auth page
   const isAuthPage = window.location.pathname === '/auth';
 
-  // 检查是否已认证
+  // Check if user is authenticated
   const authenticated = isAuthenticated();
 
-  // 如果未认证且不在认证页面，重定向到认证页面
+  // If not authenticated and not on auth page, redirect to auth page
   if (!authenticated && !isAuthPage) {
     history.push('/auth');
     return {
       authenticated: false,
+      currentLanguage: 'zh-CN', // Default Chinese
     };
   }
 
-  // 如果已认证且在认证页面，重定向到首页
+  // If authenticated and on auth page, redirect to home page
   if (authenticated && isAuthPage) {
     history.push('/home');
   }
 
+  // Get system configuration (only when authenticated)
+  let systemConfigs = null;
+  let currentLanguage = 'zh-CN';
+
+  if (authenticated) {
+    try {
+      const response = await getSystemConfigs();
+      systemConfigs = response.data;
+      currentLanguage = getConfigValue(systemConfigs, 'system.language') || 'zh-CN';
+
+      // Update cached language configuration to ensure frontend-backend consistency
+      setLocale(currentLanguage, false);
+    } catch (error) {
+      console.error('Failed to load system configs:', error);
+    }
+  }
+
   return {
     authenticated,
+    systemConfigs,
+    currentLanguage,
   };
 }
 
-// antd 运行时配置，在应用启动时设置主题
+// antd runtime configuration, set theme on app startup
 export const antd: RuntimeAntdConfig = (memo) => {
-  // 从 localStorage 读取保存的主题
+  // Read saved theme from localStorage
   const savedTheme = typeof window !== 'undefined'
     ? localStorage.getItem(THEME_STORAGE_KEY)
     : null;
@@ -50,12 +71,34 @@ export const antd: RuntimeAntdConfig = (memo) => {
   return memo;
 };
 
-// request 运行时配置
+// locale runtime configuration
+export const locale: RuntimeConfig['locale'] = {
+  getLocale() {
+    // Prefer saved user language from localStorage
+    const savedLocale = localStorage.getItem('umi_locale');
+    if (savedLocale) {
+      return savedLocale;
+    }
+
+    // Fallback to browser language detection
+    const browserLang = navigator.language;
+    if (browserLang.startsWith('zh')) {
+      return 'zh-CN';
+    } else if (browserLang.startsWith('en')) {
+      return 'en-US';
+    }
+
+    // Default Chinese
+    return 'zh-CN';
+  },
+};
+
+// Request runtime configuration
 export const request = {
-  // 请求拦截器
+  // Request interceptors
   requestInterceptors: [
     (config: any) => {
-      // 自动添加认证头
+      // Automatically add auth header
       const accessKey = getStoredAccessKey();
       if (accessKey) {
         config.headers = {
@@ -66,36 +109,34 @@ export const request = {
       return config;
     },
   ],
-  // 响应拦截器
+  // Response interceptors
   responseInterceptors: [
     (response: any) => {
-      // 处理响应
+      // Handle response
       if (response.status === 401) {
-        message.error('认证失败，请重新登录');
         history.push('/auth');
       }
       return response;
     },
   ],
-  // 错误处理
+  // Error handling
   errorConfig: {
     errorHandler: (error: any) => {
-      // 只处理认证错误，其他错误让具体的业务代码处理
+      // Only handle auth errors, let specific business code handle other errors
       if (error.response?.status === 401) {
-        message.error('认证失败，请重新登录');
         history.push('/auth');
         return;
       }
 
-      // 对于脚本执行相关的错误，不在全局处理，让业务代码自己处理
+      // For script execution related errors, don't handle globally, let business code handle
       const isScriptExecutionError = error.config?.url?.includes('/execute') ||
                                    error.config?.url?.includes('/scripts');
 
       if (!isScriptExecutionError && error.response?.status >= 500) {
-        message.error('服务器错误，请稍后重试');
+        message.error('Server error');
       }
 
-      // 抛出错误让业务代码处理
+      // Throw error for business code to handle
       throw error;
     },
   },
@@ -109,7 +150,7 @@ export const layout = () => {
     },
     layout: 'top',
     dark: true,
-    // 自定义顶部右侧内容
+    // Custom top right content
     rightContentRender: () => {
       return (
         <Space style={{ marginRight: '16px' }}>

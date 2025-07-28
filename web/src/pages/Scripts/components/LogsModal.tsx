@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Modal, Button, message, Popconfirm } from 'antd';
 import { ReloadOutlined, DownloadOutlined, ClearOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { getScriptLogs, clearScriptLogs } from '@/services/scripts';
 import OutputDisplay, { OutputDisplayRef } from '@/components/OutputDisplay';
 
@@ -21,8 +22,9 @@ const LogsModal: React.FC<LogsModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [clearing, setClearing] = useState(false);
   const outputDisplayRef = useRef<OutputDisplayRef>(null);
+  const intl = useIntl();
 
-  // 加载日志
+  // Load logs
   const loadLogs = async () => {
     if (!scriptId) return;
 
@@ -31,9 +33,9 @@ const LogsModal: React.FC<LogsModalProps> = ({
       const response = await getScriptLogs(scriptId);
       setLogs(response.logs || '');
     } catch (error: any) {
-      console.error('获取日志失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.logs.load_error' }), error);
 
-      let errorMessage = '获取日志失败';
+      let errorMessage = intl.formatMessage({ id: 'scripts.logs.load_error' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -46,10 +48,10 @@ const LogsModal: React.FC<LogsModalProps> = ({
     }
   };
 
-  // 下载日志
+  // Download logs
   const downloadLogs = () => {
     if (!logs) {
-      message.warning('暂无日志内容');
+      message.warning(intl.formatMessage({ id: 'scripts.logs.no_content' }));
       return;
     }
 
@@ -62,10 +64,10 @@ const LogsModal: React.FC<LogsModalProps> = ({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    message.success('日志下载成功 📥');
+    message.success(intl.formatMessage({ id: 'scripts.logs.download_success' }));
   };
 
-  // 清空日志
+  // Clear logs
   const handleClearLogs = async () => {
     if (!scriptId) return;
 
@@ -73,11 +75,11 @@ const LogsModal: React.FC<LogsModalProps> = ({
     try {
       const response = await clearScriptLogs(scriptId);
       message.success(response.message);
-      setLogs(''); // 清空本地显示的日志
+      setLogs(''); // Clear locally displayed logs
     } catch (error: any) {
-      console.error('清空日志失败:', error);
+      console.error(intl.formatMessage({ id: 'scripts.logs.clear_error' }), error);
 
-      let errorMessage = '清空日志失败';
+      let errorMessage = intl.formatMessage({ id: 'scripts.logs.clear_error' });
       if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
       } else if (error?.message) {
@@ -90,7 +92,7 @@ const LogsModal: React.FC<LogsModalProps> = ({
     }
   };
 
-  // 当弹窗打开时加载日志
+  // Load logs when modal opens
   useEffect(() => {
     if (visible) {
       loadLogs();
@@ -101,7 +103,7 @@ const LogsModal: React.FC<LogsModalProps> = ({
     <Modal
         title={
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>📋 执行日志 - {scriptName}</span>
+            <span>📋 {intl.formatMessage({ id: 'scripts.logs.title' }, { name: scriptName })}</span>
             <div>
               <Button
                 type="text"
@@ -110,7 +112,7 @@ const LogsModal: React.FC<LogsModalProps> = ({
                 loading={loading}
                 size="small"
               >
-                刷新
+                {intl.formatMessage({ id: 'scripts.logs.refresh' })}
               </Button>
               <Button
                 type="text"
@@ -119,14 +121,14 @@ const LogsModal: React.FC<LogsModalProps> = ({
                 disabled={!logs}
                 size="small"
               >
-                下载
+                {intl.formatMessage({ id: 'scripts.logs.download' })}
               </Button>
               <Popconfirm
-                title="确认清空日志"
-                description="清空后无法恢复，确定要清空所有日志吗？"
+                title={intl.formatMessage({ id: 'scripts.logs.confirm_clear' })}
+                description={intl.formatMessage({ id: 'scripts.logs.confirm_clear_desc' })}
                 onConfirm={handleClearLogs}
-                okText="确定"
-                cancelText="取消"
+                okText={intl.formatMessage({ id: 'scripts.logs.confirm_ok' })}
+                cancelText={intl.formatMessage({ id: 'scripts.logs.confirm_cancel' })}
                 okButtonProps={{ danger: true }}
               >
                 <Button
@@ -137,7 +139,7 @@ const LogsModal: React.FC<LogsModalProps> = ({
                   size="small"
                   danger
                 >
-                  清空
+                  {intl.formatMessage({ id: 'scripts.logs.clear' })}
                 </Button>
               </Popconfirm>
             </div>
@@ -148,7 +150,7 @@ const LogsModal: React.FC<LogsModalProps> = ({
         width={800}
         footer={[
           <Button key="close" onClick={onCancel}>
-            关闭
+            {intl.formatMessage({ id: 'scripts.logs.close' })}
           </Button>,
         ]}
         destroyOnHidden
@@ -161,8 +163,8 @@ const LogsModal: React.FC<LogsModalProps> = ({
           maxHeight={500}
           minHeight={100}
           autoScrollToBottom={true}
-          emptyDescription="暂无执行日志"
-          loadingDescription="加载日志中..."
+          emptyDescription={intl.formatMessage({ id: 'scripts.logs.empty_description' })}
+          loadingDescription={intl.formatMessage({ id: 'scripts.logs.loading_description' })}
           className="dark-theme"
           fontSize={12}
           lineHeight={1.5}

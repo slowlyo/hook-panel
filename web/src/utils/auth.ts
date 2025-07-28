@@ -1,45 +1,45 @@
 /**
- * 认证相关工具函数
+ * Authentication related utility functions
  */
 
 const ACCESS_KEY_STORAGE_KEY = 'hook_panel_access_key';
 
 /**
- * 获取存储的访问密钥
+ * Get stored access key
  */
 export const getStoredAccessKey = (): string | null => {
   try {
     return localStorage.getItem(ACCESS_KEY_STORAGE_KEY);
   } catch (error) {
-    console.error('获取访问密钥失败:', error);
+    console.error('Failed to get access key:', error);
     return null;
   }
 };
 
 /**
- * 保存访问密钥到本地存储
+ * Save access key to local storage
  */
 export const setStoredAccessKey = (accessKey: string): void => {
   try {
     localStorage.setItem(ACCESS_KEY_STORAGE_KEY, accessKey);
   } catch (error) {
-    console.error('保存访问密钥失败:', error);
+    console.error('Failed to save access key:', error);
   }
 };
 
 /**
- * 清除存储的访问密钥
+ * Clear stored access key
  */
 export const clearStoredAccessKey = (): void => {
   try {
     localStorage.removeItem(ACCESS_KEY_STORAGE_KEY);
   } catch (error) {
-    console.error('清除访问密钥失败:', error);
+    console.error('Failed to clear access key:', error);
   }
 };
 
 /**
- * 检查是否已认证
+ * Check if user is authenticated
  */
 export const isAuthenticated = (): boolean => {
   const accessKey = getStoredAccessKey();
@@ -47,18 +47,18 @@ export const isAuthenticated = (): boolean => {
 };
 
 /**
- * 验证访问密钥（暂时任意内容都通过）
+ * Validate access key (temporarily any content passes)
  */
 export const validateAccessKey = async (accessKey: string): Promise<boolean> => {
-  // 暂时的验证逻辑：任意非空内容都可以通过
+  // Temporary validation logic: any non-empty content can pass
   return accessKey.trim().length > 0;
 };
 
 /**
- * 退出登录
+ * Logout
  */
 export const logout = (): void => {
   clearStoredAccessKey();
-  // 重定向到认证页面
+  // Redirect to auth page
   window.location.href = '/auth';
 };

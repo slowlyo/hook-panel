@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, message, Typography, ConfigProvider } from 'antd';
 import { SendOutlined, KeyOutlined } from '@ant-design/icons';
-import { history } from '@umijs/max';
+import { history, useIntl } from '@umijs/max';
 import webhook from '@/assets/webhook.png';
 import styles from './index.less';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -14,29 +14,30 @@ const AuthPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [form] = Form.useForm();
   const { theme: currentTheme } = useTheme();
+  const intl = useIntl();
 
   const handleSubmit = async (values: { accessKey: string }) => {
     setLoading(true);
     try {
-      // 使用认证工具函数验证密钥
+      // Use auth utility function to validate key
       const isValid = await validateAccessKey(values.accessKey);
 
       if (isValid) {
-        // 使用认证工具函数保存密钥
+        // Use auth utility function to save key
         setStoredAccessKey(values.accessKey);
-        message.success('认证成功！🎉');
+        message.success(intl.formatMessage({ id: 'auth.login_success' }));
 
-        // 重定向到首页
+        // Redirect to home page
         setTimeout(() => {
           history.push('/home');
-          // 移除页面刷新，避免暗色模式闪烁
+          // Remove page refresh to avoid dark mode flicker
         }, 500);
       } else {
-        message.error('访问密钥无效，请重试');
+        message.error(intl.formatMessage({ id: 'auth.access_key.invalid' }));
       }
     } catch (error) {
-      console.error('认证过程出错:', error);
-      message.error('认证失败，请重试');
+      console.error(intl.formatMessage({ id: 'auth.process_error' }), error);
+      message.error(intl.formatMessage({ id: 'auth.login_error' }));
     } finally {
       setLoading(false);
     }
@@ -48,7 +49,7 @@ const AuthPage: React.FC = () => {
         className={styles.authContainer}
         data-theme={currentTheme}
       >
-        {/* 主题切换按钮 */}
+        {/* Theme Toggle Button */}
         <div className={styles.themeToggle}>
           <ThemeToggle />
         </div>
@@ -79,15 +80,15 @@ const AuthPage: React.FC = () => {
             <Form.Item
               name="accessKey"
               rules={[
-                { required: true, message: '请输入访问密钥' },
-                { min: 1, message: '访问密钥不能为空' },
+                { required: true, message: intl.formatMessage({ id: 'auth.access_key.required' }) },
+                { min: 1, message: intl.formatMessage({ id: 'auth.access_key.empty' }) },
               ]}
               style={{ marginBottom: 0 }}
             >
               <div className={styles.inputGroup}>
                 <Input.Password
                   prefix={<KeyOutlined />}
-                  placeholder="请输入访问密钥"
+                  placeholder={intl.formatMessage({ id: 'auth.access_key.placeholder' })}
                   autoFocus
                   style={{ flex: 1 }}
                 />

@@ -1,50 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { PageContainer, StatisticCard } from '@ant-design/pro-components';
 import {
-  Card,
-  Row,
-  Col,
-  Space,
-  Button,
-  Form,
-  Input,
-  Select,
-  message,
-  theme,
-} from 'antd';
+  buildConfigUpdateRequest,
+  ConfigCategory,
+  ConfigResponse,
+  getSystemConfigs,
+  updateSystemConfigs,
+} from '@/services/config';
+import { DashboardStats, getDashboardStats } from '@/services/scripts';
+import { formatDateTime } from '@/utils/dateFormat';
 import {
-  RocketOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
   CodeOutlined,
+  DashboardOutlined,
+  ExclamationCircleOutlined,
+  GlobalOutlined,
   HistoryOutlined,
   PlusOutlined,
-  ThunderboltOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  SettingOutlined,
-  GlobalOutlined,
+  RocketOutlined,
   SaveOutlined,
-  ClockCircleOutlined,
-  CalendarOutlined,
-  DashboardOutlined,
+  SettingOutlined,
+  ThunderboltOutlined,
   TranslationOutlined,
 } from '@ant-design/icons';
-import { history } from '@umijs/max';
-import { getDashboardStats, DashboardStats } from '@/services/scripts';
-import { getSystemConfigs, updateSystemConfigs, buildConfigUpdateRequest, ConfigCategory, ConfigResponse } from '@/services/config';
-import { formatDateTime } from '@/utils/dateFormat';
+import { PageContainer, StatisticCard } from '@ant-design/pro-components';
+import { FormattedMessage, history, setLocale, useIntl } from '@umijs/max';
+import {
+  Button,
+  Card,
+  Col,
+  Form,
+  Input,
+  message,
+  Row,
+  Select,
+  Space,
+  theme,
+} from 'antd';
+import React, { useEffect, useState } from 'react';
 import styles from './index.less';
-
-
 
 const HomePage: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [configForm] = Form.useForm();
-  const [configCategories, setConfigCategories] = useState<ConfigCategory[]>([]);
+  const [configCategories, setConfigCategories] = useState<ConfigCategory[]>(
+    [],
+  );
   const [configLoading, setConfigLoading] = useState(false);
   const { token } = theme.useToken();
+  const intl = useIntl();
 
-  // 获取配置项图标
+  // Get configuration item icon
   const getConfigIcon = (key: string) => {
     const iconMap: Record<string, React.ReactNode> = {
       'system.domain': <GlobalOutlined />,
@@ -54,7 +61,61 @@ const HomePage: React.FC = () => {
     return iconMap[key] || <SettingOutlined />;
   };
 
-  // 渲染配置项表单控件
+  // Fetch system configuration
+  const fetchConfigs = async () => {
+    try {
+      const response = await getSystemConfigs();
+      setConfigCategories(response.data);
+
+      // Set form initial values
+      const initialValues: Record<string, string> = {};
+      response.data.forEach((category) => {
+        category.configs.forEach((config) => {
+          initialValues[config.key] = config.value;
+        });
+      });
+
+      // If domain is empty, use current domain as default
+      if (!initialValues['system.domain']) {
+        initialValues['system.domain'] = window.location.origin;
+      }
+
+      configForm.setFieldsValue(initialValues);
+    } catch (error) {
+      console.error(intl.formatMessage({ id: 'error.load_config' }), error);
+      message.error(
+        intl.formatMessage({ id: 'home.system_config.load_error' }),
+      );
+    }
+  };
+
+  // Handle language switching
+  const handleLanguageChange = async (language: string) => {
+    try {
+      // Update backend configuration
+      const updateRequest = buildConfigUpdateRequest({
+        'system.language': language,
+      });
+      await updateSystemConfigs(updateRequest);
+
+      // Use UmiJS setLocale to switch language
+      setLocale(language, false); // false means no page refresh
+
+      // Re-fetch configuration to update form labels and descriptions
+      await fetchConfigs();
+
+      message.success(
+        intl.formatMessage({ id: 'home.system_config.save_success' }),
+      );
+    } catch (error) {
+      console.error(intl.formatMessage({ id: 'error.switch_language' }), error);
+      message.error(
+        intl.formatMessage({ id: 'home.system_config.save_error' }),
+      );
+    }
+  };
+
+  // Render configuration form item
   const renderConfigFormItem = (config: ConfigResponse) => {
     const commonProps = {
       label: (
@@ -64,7 +125,17 @@ const HomePage: React.FC = () => {
         </Space>
       ),
       name: config.key,
-      rules: config.required ? [{ required: true, message: `请输入${config.label}` }] : [],
+      rules: config.required
+        ? [
+            {
+              required: true,
+              message: intl.formatMessage(
+                { id: 'common.required' },
+                { field: config.label },
+              ),
+            },
+          ]
+        : [],
       tooltip: config.description,
     };
 
@@ -75,7 +146,10 @@ const HomePage: React.FC = () => {
             {...commonProps}
             rules={[
               ...(commonProps.rules || []),
-              { type: 'url', message: '请输入有效的域名格式' },
+              {
+                type: 'url',
+                message: intl.formatMessage({ id: 'validation.url' }),
+              },
             ]}
           >
             <Input placeholder="https://your-domain.com" />
@@ -88,12 +162,19 @@ const HomePage: React.FC = () => {
             {...commonProps}
             rules={[
               ...(commonProps.rules || []),
-              { pattern: /^\d+$/, message: '请输入有效的数字' },
+              {
+                pattern: /^\d+$/,
+                message: intl.formatMessage({ id: 'validation.number' }),
+              },
             ]}
           >
             <Input
               placeholder="30"
-              suffix={config.key === 'webhook.timeout' ? '秒' : undefined}
+              suffix={
+                config.key === 'webhook.timeout'
+                  ? intl.formatMessage({ id: 'common.seconds' })
+                  : undefined
+              }
               type="number"
             />
           </Form.Item>
@@ -105,14 +186,30 @@ const HomePage: React.FC = () => {
           try {
             options = JSON.parse(config.options);
           } catch (e) {
-            console.error('解析配置选项失败:', e);
+            console.error(intl.formatMessage({ id: 'error.parse_options' }), e);
           }
+        }
+
+        // Special handling for language selector
+        if (config.key === 'system.language') {
+          return (
+            <Form.Item {...commonProps}>
+              <Select
+                placeholder={intl.formatMessage({ id: 'language.switch' })}
+                options={options}
+                onChange={handleLanguageChange}
+              />
+            </Form.Item>
+          );
         }
 
         return (
           <Form.Item {...commonProps}>
             <Select
-              placeholder={`请选择${config.label}`}
+              placeholder={intl.formatMessage(
+                { id: 'form.placeholder.select' },
+                { field: config.label },
+              )}
               options={options}
             />
           </Form.Item>
@@ -121,13 +218,18 @@ const HomePage: React.FC = () => {
       default:
         return (
           <Form.Item {...commonProps}>
-            <Input placeholder={`请输入${config.label}`} />
+            <Input
+              placeholder={intl.formatMessage(
+                { id: 'form.placeholder.input' },
+                { field: config.label },
+              )}
+            />
           </Form.Item>
         );
     }
   };
 
-  // 获取统计数据
+  // Get dashboard statistics
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -135,8 +237,8 @@ const HomePage: React.FC = () => {
         const response = await getDashboardStats();
         setStats(response);
       } catch (error) {
-        console.error('获取统计数据失败:', error);
-        message.error('获取统计数据失败');
+        console.error(intl.formatMessage({ id: 'error.load_stats' }), error);
+        message.error(intl.formatMessage({ id: 'error.load_stats' }));
       } finally {
         setLoading(false);
       }
@@ -144,45 +246,25 @@ const HomePage: React.FC = () => {
     fetchStats();
   }, []);
 
-  // 获取系统配置
+  // Get system configuration
   useEffect(() => {
-    const fetchConfigs = async () => {
-      try {
-        const response = await getSystemConfigs();
-        setConfigCategories(response.data);
-
-        // 设置表单初始值
-        const initialValues: Record<string, string> = {};
-        response.data.forEach(category => {
-          category.configs.forEach(config => {
-            initialValues[config.key] = config.value;
-          });
-        });
-
-        // 如果域名为空，使用当前域名作为默认值
-        if (!initialValues['system.domain']) {
-          initialValues['system.domain'] = window.location.origin;
-        }
-
-        configForm.setFieldsValue(initialValues);
-      } catch (error) {
-        console.error('获取系统配置失败:', error);
-        message.error('获取系统配置失败');
-      }
-    };
     fetchConfigs();
   }, [configForm]);
 
-  // 保存配置
+  // Save configuration
   const handleSaveConfig = async (values: any) => {
     try {
       setConfigLoading(true);
       const updateRequest = buildConfigUpdateRequest(values);
       await updateSystemConfigs(updateRequest);
-      message.success('配置保存成功 ✅');
+      message.success(
+        intl.formatMessage({ id: 'home.system_config.save_success' }),
+      );
     } catch (error) {
-      console.error('保存配置失败:', error);
-      message.error('保存配置失败');
+      console.error(intl.formatMessage({ id: 'error.save_config' }), error);
+      message.error(
+        intl.formatMessage({ id: 'home.system_config.save_error' }),
+      );
     } finally {
       setConfigLoading(false);
     }
@@ -192,18 +274,20 @@ const HomePage: React.FC = () => {
     <PageContainer
       ghost
       header={{
-        title: '🚀 Hook Panel',
-        subTitle: '轻量级 Webhook 脚本管理平台',
+        title: <FormattedMessage id="home.title" />,
+        subTitle: <FormattedMessage id="home.subtitle" />,
       }}
     >
       <div className={styles.container}>
-        {/* 统计卡片 */}
+        {/* Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} lg={6}>
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '脚本总数',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.total_scripts',
+                }),
                 value: stats?.total_scripts || 0,
                 icon: <CodeOutlined style={{ color: token.colorPrimary }} />,
               }}
@@ -213,7 +297,9 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '启用脚本',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.enabled_scripts',
+                }),
                 value: stats?.enabled_scripts || 0,
                 icon: <CheckCircleOutlined style={{ color: '#52c41a' }} />,
               }}
@@ -223,7 +309,7 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '总调用次数',
+                title: intl.formatMessage({ id: 'home.dashboard.total_calls' }),
                 value: stats?.total_calls || 0,
                 icon: <ThunderboltOutlined style={{ color: '#fa8c16' }} />,
               }}
@@ -233,7 +319,9 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '今日调用',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.success_calls',
+                }),
                 value: stats?.today_calls || 0,
                 icon: <CalendarOutlined style={{ color: '#722ed1' }} />,
               }}
@@ -241,13 +329,15 @@ const HomePage: React.FC = () => {
           </Col>
         </Row>
 
-        {/* 第二行统计卡片 */}
+        {/* Second Row Statistics Cards */}
         <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
           <Col xs={24} sm={12} lg={6}>
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '成功率',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.success_rate',
+                }),
                 value: stats?.success_rate || 0,
                 suffix: '%',
                 precision: 1,
@@ -259,7 +349,9 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '平均响应时间',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.avg_response_time',
+                }),
                 value: stats?.avg_response_time || 0,
                 suffix: 'ms',
                 precision: 0,
@@ -271,9 +363,13 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '失败调用',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.failed_calls',
+                }),
                 value: stats?.failed_calls || 0,
-                icon: <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />,
+                icon: (
+                  <ExclamationCircleOutlined style={{ color: '#ff4d4f' }} />
+                ),
               }}
             />
           </Col>
@@ -281,8 +377,14 @@ const HomePage: React.FC = () => {
             <StatisticCard
               loading={loading}
               statistic={{
-                title: '最近调用',
-                value: stats?.last_call_time ? formatDateTime(stats.last_call_time) : '暂无',
+                title: intl.formatMessage({
+                  id: 'home.dashboard.recent_calls',
+                }),
+                value: stats?.last_call_time
+                  ? formatDateTime(stats.last_call_time)
+                  : intl.formatMessage({
+                      id: 'home.dashboard.recent_calls.empty',
+                    }),
                 icon: <HistoryOutlined style={{ color: '#faad14' }} />,
               }}
             />
@@ -290,13 +392,13 @@ const HomePage: React.FC = () => {
         </Row>
 
         <Row gutter={[16, 16]}>
-          {/* 快速操作 */}
+          {/* Quick Actions */}
           <Col xs={24} lg={12}>
             <Card
               title={
                 <Space>
                   <RocketOutlined />
-                  快速操作
+                  <FormattedMessage id="home.quick_actions.title" />
                 </Space>
               }
               size="small"
@@ -317,7 +419,7 @@ const HomePage: React.FC = () => {
                         className={styles.actionText}
                         style={{ color: token.colorText }}
                       >
-                        创建脚本
+                        <FormattedMessage id="home.quick_actions.create_script" />
                       </div>
                     </div>
                   </Card>
@@ -337,7 +439,7 @@ const HomePage: React.FC = () => {
                         className={styles.actionText}
                         style={{ color: token.colorText }}
                       >
-                        管理脚本
+                        <FormattedMessage id="home.quick_actions.manage_scripts" />
                       </div>
                     </div>
                   </Card>
@@ -357,7 +459,7 @@ const HomePage: React.FC = () => {
                         className={styles.actionText}
                         style={{ color: token.colorText }}
                       >
-                        调用记录
+                        <FormattedMessage id="home.quick_actions.view_logs" />
                       </div>
                     </div>
                   </Card>
@@ -366,13 +468,13 @@ const HomePage: React.FC = () => {
             </Card>
           </Col>
 
-          {/* 系统配置 */}
+          {/* System Configuration */}
           <Col xs={24} lg={12}>
             <Card
               title={
                 <Space>
                   <SettingOutlined />
-                  系统配置
+                  <FormattedMessage id="home.system_config.title" />
                 </Space>
               }
               size="small"
@@ -383,13 +485,11 @@ const HomePage: React.FC = () => {
                 onFinish={handleSaveConfig}
               >
                 {configCategories
-                  .filter(category => category.category === 'system')
-                  .map(category =>
-                    category.configs.map(config => (
-                      <div key={config.key}>
-                        {renderConfigFormItem(config)}
-                      </div>
-                    ))
+                  .filter((category) => category.category === 'system')
+                  .map((category) =>
+                    category.configs.map((config) => (
+                      <div key={config.key}>{renderConfigFormItem(config)}</div>
+                    )),
                   )}
 
                 <Form.Item>
@@ -399,7 +499,7 @@ const HomePage: React.FC = () => {
                     icon={<SaveOutlined />}
                     loading={configLoading}
                   >
-                    保存配置
+                    <FormattedMessage id="home.system_config.save" />
                   </Button>
                 </Form.Item>
               </Form>

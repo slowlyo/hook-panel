@@ -18,6 +18,7 @@ import {
 import {
   EyeOutlined,
 } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import CodeMirror from '@uiw/react-codemirror';
 import { json } from '@codemirror/lang-json';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -37,21 +38,22 @@ const WebhookLogsPage: React.FC = () => {
   const [scripts, setScripts] = useState<Script[]>([]);
   const actionRef = useRef<ActionType>();
   const { token } = theme.useToken();
+  const intl = useIntl();
 
-  // 获取脚本列表
+  // Get script list for filter options
   useEffect(() => {
     const fetchScripts = async () => {
       try {
         const response = await getScripts({ page: 1, page_size: 1000 });
         setScripts(response.data);
       } catch (error) {
-        console.error('获取脚本列表失败:', error);
+        console.error(intl.formatMessage({ id: 'webhook_logs.load_scripts_error' }), error);
       }
     };
     fetchScripts();
-  }, []);
+  }, [intl]);
 
-  // 获取状态标签
+  // Get status tag
   const getStatusTag = (status: number) => {
     if (status >= 200 && status < 300) {
       return <Tag color="success">{status}</Tag>;
@@ -64,12 +66,12 @@ const WebhookLogsPage: React.FC = () => {
     }
   };
 
-  // 获取 webhook 调用记录（使用后端分页）
+  // Get webhook call logs (using backend pagination)
   const fetchWebhookLogs = async (params: any, sorter: any) => {
     try {
       const { script_id, status, current = 1, pageSize = 20 } = params;
 
-      // 构建查询参数
+      // Build query parameters
       const queryParams: any = {
         page: current,
         page_size: pageSize,
@@ -83,7 +85,7 @@ const WebhookLogsPage: React.FC = () => {
         queryParams.status = status;
       }
 
-      // 处理排序参数
+      // Handle sort parameters
       if (sorter && Object.keys(sorter).length > 0) {
         const sortField = Object.keys(sorter)[0];
         const sortOrder = sorter[sortField];
@@ -98,17 +100,18 @@ const WebhookLogsPage: React.FC = () => {
         }
       }
 
-      // 调用后端 API
+      // Call backend API - backend already preloads script info
       const response = await getAllWebhookLogs(queryParams);
 
-      // 为每个日志记录添加脚本信息
-      const logsWithScript: WebhookLogWithScript[] = response.data.map((log: WebhookLog) => {
-        const script = scripts.find(s => s.id === log.script_id);
-        return {
-          ...log,
-          script: script || { id: log.script_id, name: '未知脚本' } as Script,
-        };
-      });
+      // Backend already includes script info via Preload("Script")
+      // Convert to expected format for type safety
+      const logsWithScript: WebhookLogWithScript[] = response.data.map((log: WebhookLog) => ({
+        ...log,
+        script: log.script || {
+          id: log.script_id,
+          name: intl.formatMessage({ id: 'webhook_logs.unknown_script' })
+        } as Script,
+      }));
 
       return {
         data: logsWithScript,
@@ -116,8 +119,8 @@ const WebhookLogsPage: React.FC = () => {
         total: response.total,
       };
     } catch (error: any) {
-      console.error('获取 webhook 日志失败:', error);
-      message.error('获取 webhook 日志失败');
+      console.error(intl.formatMessage({ id: 'webhook_logs.load_logs_error' }), error);
+      message.error(intl.formatMessage({ id: 'webhook_logs.load_logs_error' }));
       return {
         data: [],
         success: false,
@@ -126,13 +129,13 @@ const WebhookLogsPage: React.FC = () => {
     }
   };
 
-  // 查看调用详情
+  // View call details
   const viewLogDetail = (log: WebhookLogWithScript) => {
     setCurrentLog(log);
     setDetailDrawerVisible(true);
   };
 
-  // 格式化 JSON 字符串
+  // Format JSON string
   const formatJson = (jsonStr: string) => {
     try {
       const parsed = JSON.parse(jsonStr);
@@ -142,10 +145,10 @@ const WebhookLogsPage: React.FC = () => {
     }
   };
 
-  // 表格列定义
+  // Table column definitions
   const columns: ProColumns<WebhookLogWithScript>[] = [
     {
-      title: '调用时间',
+      title: intl.formatMessage({ id: 'webhook_logs.call_time' }),
       dataIndex: 'created_at',
       sorter: true,
       search: false,
@@ -156,53 +159,53 @@ const WebhookLogsPage: React.FC = () => {
       ),
     },
     {
-      title: '脚本名称',
+      title: intl.formatMessage({ id: 'webhook_logs.script_name' }),
       dataIndex: ['script', 'name'],
       key: 'script_id',
       ellipsis: true,
       valueType: 'select',
       fieldProps: {
-        placeholder: '选择脚本',
+        placeholder: intl.formatMessage({ id: 'webhook_logs.select_script' }),
         allowClear: true,
         options: scripts.map(script => ({
           label: script.name,
           value: script.id,
         })),
       },
-      render: (text) => (
+      render: (_, record) => (
         <Space>
           <span style={{ color: token.colorPrimary }}>📄</span>
-          <Text strong>{text}</Text>
+          <Text strong>{record.script?.name || intl.formatMessage({ id: 'webhook_logs.unknown_script' })}</Text>
         </Space>
       ),
     },
     {
-      title: '状态',
+      title: intl.formatMessage({ id: 'webhook_logs.status' }),
       dataIndex: 'status',
       valueType: 'select',
       valueEnum: {
-        200: { text: '成功 (2xx)', status: 'Success' },
-        400: { text: '客户端错误 (4xx)', status: 'Warning' },
-        500: { text: '服务器错误 (5xx)', status: 'Error' },
+        200: { text: intl.formatMessage({ id: 'webhook_logs.status_success_2xx' }), status: 'Success' },
+        400: { text: intl.formatMessage({ id: 'webhook_logs.status_client_error_4xx' }), status: 'Warning' },
+        500: { text: intl.formatMessage({ id: 'webhook_logs.status_server_error_5xx' }), status: 'Error' },
       },
       fieldProps: {
-        placeholder: '选择状态',
+        placeholder: intl.formatMessage({ id: 'webhook_logs.select_status' }),
         allowClear: true,
       },
       render: (status) => getStatusTag(status as number),
     },
     {
-      title: '来源IP',
+      title: intl.formatMessage({ id: 'webhook_logs.source_ip' }),
       dataIndex: 'source_ip',
       search: false,
       render: (ip) => (
         <Text code style={{ fontSize: '12px' }}>
-          {ip || '-'}
+          {ip || intl.formatMessage({ id: 'webhook_logs.no_data' })}
         </Text>
       ),
     },
     {
-      title: '响应时间',
+      title: intl.formatMessage({ id: 'webhook_logs.response_time' }),
       dataIndex: 'response_time',
       sorter: true,
       search: false,
@@ -213,18 +216,18 @@ const WebhookLogsPage: React.FC = () => {
       ),
     },
     {
-      title: '错误信息',
+      title: intl.formatMessage({ id: 'webhook_logs.error_message' }),
       dataIndex: 'error_msg',
       ellipsis: true,
       search: false,
       render: (msg) => (
         <Text type={msg ? 'danger' : 'secondary'} style={{ fontSize: '12px' }}>
-          {msg || '无'}
+          {msg || intl.formatMessage({ id: 'webhook_logs.no_error' })}
         </Text>
       ),
     },
     {
-      title: '操作',
+      title: intl.formatMessage({ id: 'webhook_logs.action' }),
       search: false,
       render: (_, record) => (
         <Button
@@ -233,7 +236,7 @@ const WebhookLogsPage: React.FC = () => {
           icon={<EyeOutlined />}
           onClick={() => viewLogDetail(record)}
         >
-          详情
+          {intl.formatMessage({ id: 'webhook_logs.detail' })}
         </Button>
       ),
     },
@@ -257,16 +260,19 @@ const WebhookLogsPage: React.FC = () => {
           defaultPageSize: 20,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total, range) => `第 ${range[0]}-${range[1]} 条，共 ${total} 条`,
+          showTotal: (total, range) => intl.formatMessage(
+            { id: 'webhook_logs.pagination_total' },
+            { start: range[0], end: range[1], total }
+          ),
         }}
         scroll={{ x: 900 }}
         dateFormatter="string"
-        headerTitle="调用记录"
+        headerTitle={intl.formatMessage({ id: 'webhook_logs.title' })}
       />
 
-      {/* 调用详情抽屉 */}
+      {/* Call Details Drawer */}
       <Drawer
-        title="调用详情"
+        title={intl.formatMessage({ id: 'webhook_logs.detail_title' })}
         open={detailDrawerVisible}
         onClose={() => {
           setDetailDrawerVisible(false);
@@ -277,40 +283,42 @@ const WebhookLogsPage: React.FC = () => {
         {currentLog && (
           <div>
             <Descriptions column={1} bordered size="small" style={{ marginBottom: 16 }}>
-              <Descriptions.Item label="脚本名称">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.script_name' })}>
                 <Space>
                   <span style={{ color: token.colorPrimary }}>📄</span>
                   <Text strong>{currentLog.script.name}</Text>
                 </Space>
               </Descriptions.Item>
-              <Descriptions.Item label="调用时间">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.call_time' })}>
                 {formatDateTime(currentLog.created_at)}
               </Descriptions.Item>
-              <Descriptions.Item label="请求方法">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.request_method' })}>
                 <Tag color="blue">{currentLog.method}</Tag>
               </Descriptions.Item>
-              <Descriptions.Item label="响应状态">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.response_status' })}>
                 {getStatusTag(currentLog.status)}
               </Descriptions.Item>
-              <Descriptions.Item label="来源IP">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.source_ip' })}>
                 <Text code>{currentLog.source_ip}</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="User-Agent">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.user_agent' })}>
                 <Text code style={{ fontSize: '12px', wordBreak: 'break-all' }}>
-                  {currentLog.user_agent || '-'}
+                  {currentLog.user_agent || intl.formatMessage({ id: 'webhook_logs.no_data' })}
                 </Text>
               </Descriptions.Item>
-              <Descriptions.Item label="响应时间">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.response_time' })}>
                 <Text>{currentLog.response_time}ms</Text>
               </Descriptions.Item>
-              <Descriptions.Item label="错误信息">
+              <Descriptions.Item label={intl.formatMessage({ id: 'webhook_logs.error_message' })}>
                 <Text type="danger">{currentLog?.error_msg}</Text>
               </Descriptions.Item>
             </Descriptions>
 
-            {/* 请求头 */}
+            {/* Request Headers */}
             <div style={{ marginBottom: 16 }}>
-              <Text strong style={{ display: 'block', marginBottom: 8 }}>请求头:</Text>
+              <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                {intl.formatMessage({ id: 'webhook_logs.request_headers' })}:
+              </Text>
               <CodeMirror
                 value={formatJson(currentLog.headers)}
                 extensions={[json()]}
@@ -325,10 +333,12 @@ const WebhookLogsPage: React.FC = () => {
               />
             </div>
 
-            {/* 请求体 */}
+            {/* Request Body */}
             {currentLog.body && (
               <div>
-                <Text strong style={{ display: 'block', marginBottom: 8 }}>请求体:</Text>
+                <Text strong style={{ display: 'block', marginBottom: 8 }}>
+                  {intl.formatMessage({ id: 'webhook_logs.request_body' })}:
+                </Text>
                 <CodeMirror
                   value={currentLog.body.startsWith('{') || currentLog.body.startsWith('[')
                     ? formatJson(currentLog.body)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	"hook-panel/internal/middleware"
 	"hook-panel/internal/models"
 	"hook-panel/internal/pkg/database"
 	"hook-panel/internal/pkg/i18n"
@@ -156,6 +157,15 @@ func UpdateSystemConfigs(c *gin.Context) {
 		return
 	}
 
+	// 检查是否更新了语言配置，如果是则刷新缓存
+	for _, configItem := range req.Configs {
+		if configItem.Key == "system.language" {
+			// 刷新语言配置缓存
+			refreshLanguageCache()
+			break
+		}
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": i18n.T(c, "success.config.saved"),
 	})
@@ -189,4 +199,12 @@ func SetConfigValue(key, value string) error {
 	}
 
 	return db.Model(&config).Update("value", value).Error
+}
+
+// refreshLanguageCache 刷新语言配置缓存
+func refreshLanguageCache() {
+	// 通过全局函数刷新缓存，避免循环依赖
+	if middleware.RefreshLanguageCacheFunc != nil {
+		middleware.RefreshLanguageCacheFunc()
+	}
 }

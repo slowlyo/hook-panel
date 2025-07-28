@@ -28,7 +28,7 @@ func Init() {
 		language: defaultLanguage,
 		messages: make(map[string]map[string]interface{}),
 	}
-	
+
 	// 加载语言包
 	loadLanguagePacks()
 }
@@ -37,7 +37,7 @@ func Init() {
 func loadLanguagePacks() {
 	// 加载中文语言包
 	globalTranslator.messages["zh-CN"] = getChineseMessages()
-	
+
 	// 加载英文语言包
 	globalTranslator.messages["en-US"] = getEnglishMessages()
 }
@@ -61,7 +61,7 @@ func (t *Translator) T(key string, params ...interface{}) string {
 		// 如果当前语言不存在，使用默认语言
 		langMessages = t.messages[defaultLanguage]
 	}
-	
+
 	// 解析嵌套的key（如 "error.config.not_found"）
 	message := t.getNestedValue(langMessages, key)
 	if message == "" {
@@ -70,18 +70,18 @@ func (t *Translator) T(key string, params ...interface{}) string {
 			defaultMessages := t.messages[defaultLanguage]
 			message = t.getNestedValue(defaultMessages, key)
 		}
-		
+
 		// 如果还是找不到，返回key本身
 		if message == "" {
 			message = key
 		}
 	}
-	
+
 	// 参数替换
 	if len(params) > 0 {
 		message = t.replaceParams(message, params...)
 	}
-	
+
 	return message
 }
 
@@ -89,7 +89,7 @@ func (t *Translator) T(key string, params ...interface{}) string {
 func (t *Translator) getNestedValue(messages map[string]interface{}, key string) string {
 	keys := strings.Split(key, ".")
 	current := messages
-	
+
 	for i, k := range keys {
 		if i == len(keys)-1 {
 			// 最后一个key，应该是字符串
@@ -106,7 +106,7 @@ func (t *Translator) getNestedValue(messages map[string]interface{}, key string)
 			}
 		}
 	}
-	
+
 	return ""
 }
 

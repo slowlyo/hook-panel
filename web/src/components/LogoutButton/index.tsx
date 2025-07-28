@@ -1,21 +1,24 @@
 import React from 'react';
 import { Modal, Tooltip } from 'antd';
 import { LogoutOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { logout } from '@/utils/auth';
 import ThemeAwareButton from '@/components/ThemeAwareButton';
 
 /**
- * 注销按钮组件
- * 包含确认逻辑，防止误操作
+ * Logout button component
+ * Contains confirmation logic to prevent accidental operations
  */
 const LogoutButton: React.FC = () => {
+  const intl = useIntl();
+
   const handleLogout = () => {
     Modal.confirm({
-      title: '确认注销',
+      title: intl.formatMessage({ id: 'auth.logout_confirm_title' }),
       icon: <ExclamationCircleOutlined />,
-      content: '您确定要注销当前账户吗？注销后需要重新输入访问密钥。',
-      okText: '确认注销',
-      cancelText: '取消',
+      content: intl.formatMessage({ id: 'auth.logout_confirm_content' }),
+      okText: intl.formatMessage({ id: 'auth.logout_confirm_ok' }),
+      cancelText: intl.formatMessage({ id: 'common.cancel' }),
       okType: 'danger',
       onOk: () => {
         logout();
@@ -24,7 +27,7 @@ const LogoutButton: React.FC = () => {
   };
 
   return (
-    <Tooltip title="注销">
+    <Tooltip title={intl.formatMessage({ id: 'auth.logout_tooltip' })}>
       <ThemeAwareButton
         icon={<LogoutOutlined />}
         onClick={handleLogout}

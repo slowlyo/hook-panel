@@ -7,13 +7,14 @@ import {
   ProFormSelect,
 } from '@ant-design/pro-components';
 import { message, Form } from 'antd';
+import { useIntl } from '@umijs/max';
 import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 
 import { createScript, updateScript, getScript } from '@/services/scripts';
 import { getExecutorOptions, getExecutorConfig } from '@/constants/executors';
 
-// 脚本数据类型定义（兼容前端显示）
+// Script data type definition (compatible with frontend display)
 export interface ScriptItem {
   id: string;
   name: string;
@@ -21,21 +22,21 @@ export interface ScriptItem {
   content: string;
   executor: string;
   status: 'enabled' | 'disabled';
-  trigger: 'webhook'; // 固定为webhook触发
+  trigger: 'webhook'; // Fixed to webhook trigger
   createdAt: string;
   updatedAt: string;
-  lastCallTime?: string; // 最近调用时间
-  callCount: number; // 调用次数
+  lastCallTime?: string; // Last call time
+  callCount: number; // Call count
 }
 
 interface ScriptFormProps {
-  /** 弹窗是否可见 */
+  /** Whether the modal is visible */
   visible: boolean;
-  /** 关闭弹窗回调 */
+  /** Close modal callback */
   onCancel: () => void;
-  /** 提交成功回调 */
+  /** Submit success callback */
   onSuccess: () => void;
-  /** 编辑的记录，为空时表示新增 */
+  /** Record to edit, null means create new */
   record?: ScriptItem | null;
 }
 
@@ -48,24 +49,25 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [scriptContent, setScriptContent] = useState('');
+  const intl = useIntl();
 
-  // 检查是否为默认模板
+  // Check if it's default template
   const isDefaultTemplate = (content: string) => {
     if (!content.trim()) return true;
-    // 检查是否包含默认模板的特征字符串
+    // Check if contains default template characteristic strings
     return content.includes('Webhook脚本示例') ||
            content.includes('在这里编写你的脚本逻辑') ||
            content.includes('脚本执行完成');
   };
 
-  // 当编辑模式时，加载脚本内容
+  // Load script content when in edit mode
   useEffect(() => {
     if (visible && record) {
       setLoading(true);
       getScript(record.id)
         .then((response) => {
           setScriptContent(response.content || '');
-          // 设置表单初始值
+          // Set form initial values
           form.setFieldsValue({
             name: record.name,
             description: record.description,
@@ -74,23 +76,23 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
           });
         })
         .catch((error) => {
-          console.error('加载脚本内容失败:', error);
-          message.error('加载脚本内容失败');
+          console.error(intl.formatMessage({ id: 'scripts.form.load_content_error' }), error);
+          message.error(intl.formatMessage({ id: 'scripts.form.load_content_error' }));
         })
         .finally(() => {
           setLoading(false);
         });
     } else if (visible && !record) {
-      // 新建模式，重置表单和内容
+      // Create mode, reset form and content
       form.resetFields();
-      // 设置默认执行器为bash，并使用对应的默认模板
+      // Set default executor to bash and use corresponding default template
       const defaultExecutor = 'bash';
       const defaultConfig = getExecutorConfig(defaultExecutor);
       form.setFieldValue('executor', defaultExecutor);
       setScriptContent(defaultConfig?.defaultTemplate || '');
     }
-  }, [visible, record, form]);
-  // 保存脚本
+  }, [visible, record, form, intl]);
+  // Save script
   const handleSubmit = async (values: any) => {
     try {
       const submitData = {
@@ -98,31 +100,31 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
         description: values.description || '',
         content: scriptContent,
         executor: values.executor || 'bash',
-        enabled: values.enabled !== false, // 默认启用
+        enabled: values.enabled !== false, // Default enabled
       };
 
       if (record) {
-        // 编辑模式
+        // Edit mode
         await updateScript(record.id, submitData);
-        message.success('脚本更新成功 ✅');
+        message.success(intl.formatMessage({ id: 'scripts.form.update_success' }));
       } else {
-        // 新增模式
+        // Create mode
         await createScript(submitData);
-        message.success('脚本创建成功 🎉');
+        message.success(intl.formatMessage({ id: 'scripts.form.create_success' }));
       }
 
       onSuccess();
       return true;
     } catch (error) {
-      console.error('保存脚本失败:', error);
-      message.error('保存失败，请重试');
+      console.error(intl.formatMessage({ id: 'scripts.form.save_failed' }), error);
+      message.error(intl.formatMessage({ id: 'scripts.form.save_failed' }));
       return false;
     }
   };
 
   return (
     <ModalForm
-      title={record ? '编辑脚本' : '新建脚本'}
+      title={record ? intl.formatMessage({ id: 'scripts.form.edit_title' }) : intl.formatMessage({ id: 'scripts.form.create_title' })}
       width={600}
       open={visible}
       onOpenChange={(open) => {
@@ -143,20 +145,20 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
     >
       <ProFormText
         name="name"
-        label="脚本名称"
-        placeholder="请输入脚本名称"
+        label={intl.formatMessage({ id: 'scripts.form.name_label' })}
+        placeholder={intl.formatMessage({ id: 'scripts.form.name_placeholder' })}
         rules={[
-          { required: true, message: '请输入脚本名称' },
-          { max: 50, message: '脚本名称不能超过50个字符' },
+          { required: true, message: intl.formatMessage({ id: 'scripts.form.name_required' }) },
+          { max: 50, message: intl.formatMessage({ id: 'scripts.form.name_max_length' }) },
         ]}
       />
-      
+
       <ProFormTextArea
         name="description"
-        label="脚本描述"
-        placeholder="请输入脚本描述（可选）"
+        label={intl.formatMessage({ id: 'scripts.form.description_label' })}
+        placeholder={intl.formatMessage({ id: 'scripts.form.description_placeholder' })}
         rules={[
-          { max: 200, message: '脚本描述不能超过200个字符' },
+          { max: 200, message: intl.formatMessage({ id: 'scripts.form.description_max_length' }) },
         ]}
         fieldProps={{
           rows: 3,
@@ -167,36 +169,36 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
 
       <ProFormSelect
         name="executor"
-        label="执行器类型"
-        placeholder="请选择脚本执行器"
+        label={intl.formatMessage({ id: 'scripts.form.executor_label' })}
+        placeholder={intl.formatMessage({ id: 'scripts.form.executor_placeholder' })}
         initialValue="bash"
         rules={[
-          { required: true, message: '请选择执行器类型' },
+          { required: true, message: intl.formatMessage({ id: 'scripts.form.executor_required' }) },
         ]}
         options={getExecutorOptions()}
         onChange={(value: string) => {
-          // 当执行器改变时，如果当前脚本内容为空或为默认模板，则更新为新执行器的默认模板
+          // When executor changes, if current script content is empty or default template, update to new executor's default template
           const config = getExecutorConfig(value);
           if (config && (!scriptContent || isDefaultTemplate(scriptContent))) {
             setScriptContent(config.defaultTemplate);
           }
         }}
-        tooltip="选择脚本的执行环境，确保服务器已安装对应的运行时"
+        tooltip={intl.formatMessage({ id: 'scripts.form.executor_tooltip' })}
       />
 
       <ProFormSwitch
         name="enabled"
-        label="启用状态"
-        checkedChildren="启用"
-        unCheckedChildren="禁用"
+        label={intl.formatMessage({ id: 'scripts.form.enabled_label' })}
+        checkedChildren={intl.formatMessage({ id: 'scripts.enabled' })}
+        unCheckedChildren={intl.formatMessage({ id: 'scripts.disabled' })}
         initialValue={true}
-        tooltip="新建脚本默认启用，可随时切换"
+        tooltip={intl.formatMessage({ id: 'scripts.form.enabled_tooltip' })}
       />
 
       <Form.Item
-        label="脚本内容"
+        label={intl.formatMessage({ id: 'scripts.form.content_label' })}
         required
-        tooltip="支持Shell、Python、Node.js等各种脚本语言"
+        tooltip={intl.formatMessage({ id: 'scripts.form.content_tooltip' })}
       >
         <CodeMirror
           value={scriptContent}

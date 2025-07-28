@@ -16,6 +16,13 @@ export default defineConfig({
   layout: {
     title: 'Hook Panel',
   },
+  locale: {
+    default: 'zh-CN',
+    antd: true,
+    baseNavigator: true,
+    baseSeparator: '-',
+    useLocalStorage: true,
+  },
   history:{
     type: 'hash'
   },
@@ -25,25 +32,25 @@ export default defineConfig({
       redirect: '/home',
     },
     {
-      name: '认证',
+      name: 'auth',
       path: '/auth',
       component: './Auth',
       layout: false, // 认证页面不使用布局
     },
     {
-      name: '首页',
+      name: 'home',
       path: '/home',
       component: './Home',
       icon: 'HomeOutlined',
     },
     {
-      name: '脚本管理',
+      name: 'scripts',
       path: '/scripts',
       component: './Scripts',
       icon: 'CodeOutlined',
     },
     {
-      name: '调用记录',
+      name: 'webhook-logs',
       path: '/webhook-logs',
       component: './WebhookLogs',
       icon: 'HistoryOutlined',

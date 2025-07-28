@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Input, Button, Space, message, Typography, Divider, Alert, theme } from 'antd';
 import { CopyOutlined, LinkOutlined, ReloadOutlined } from '@ant-design/icons';
+import { useIntl } from '@umijs/max';
 import { getWebhookURL } from '@/services/scripts';
 
 const { Text, Paragraph } = Typography;
@@ -28,35 +29,36 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [webhookInfo, setWebhookInfo] = useState<WebhookInfo | null>(null);
   const { token } = theme.useToken();
+  const intl = useIntl();
 
-  // 获取 webhook 信息
+  // Get webhook information
   const fetchWebhookInfo = async () => {
     if (!scriptId) return;
-    
+
     setLoading(true);
     try {
       const response = await getWebhookURL(scriptId);
       setWebhookInfo(response);
     } catch (error: any) {
-      console.error('获取 webhook URL 失败:', error);
-      message.error('获取 webhook URL 失败');
+      console.error(intl.formatMessage({ id: 'scripts.webhook.load_error' }), error);
+      message.error(intl.formatMessage({ id: 'scripts.webhook.load_error' }));
     } finally {
       setLoading(false);
     }
   };
 
-  // 复制到剪贴板
+  // Copy to clipboard
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      message.success(`${label} 已复制到剪贴板 📋`);
+      message.success(intl.formatMessage({ id: 'scripts.webhook.copy_success' }, { label }));
     } catch (error) {
-      console.error('复制失败:', error);
-      message.error('复制失败，请手动复制');
+      console.error(intl.formatMessage({ id: 'scripts.webhook.copy_failed' }), error);
+      message.error(intl.formatMessage({ id: 'scripts.webhook.copy_failed' }));
     }
   };
 
-  // 当模态框打开时获取数据
+  // Get data when modal opens
   useEffect(() => {
     if (visible && scriptId) {
       fetchWebhookInfo();
@@ -68,39 +70,39 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
       title={
         <Space>
           <LinkOutlined style={{ color: '#1677ff' }} />
-          <span>Webhook 调用地址</span>
+          <span>{intl.formatMessage({ id: 'scripts.webhook.title' })}</span>
         </Space>
       }
       open={visible}
       onCancel={onCancel}
       footer={[
         <Button key="refresh" icon={<ReloadOutlined />} onClick={fetchWebhookInfo} loading={loading}>
-          刷新
+          {intl.formatMessage({ id: 'scripts.webhook.refresh' })}
         </Button>,
         <Button key="close" onClick={onCancel}>
-          关闭
+          {intl.formatMessage({ id: 'scripts.webhook.close' })}
         </Button>,
       ]}
       width={700}
     >
       <div style={{ marginBottom: 16 }}>
-        <Text strong>脚本名称：</Text>
+        <Text strong>{intl.formatMessage({ id: 'scripts.webhook.script_name' })}：</Text>
         <Text>{scriptName}</Text>
       </div>
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Text type="secondary">正在获取 webhook 信息...</Text>
+          <Text type="secondary">{intl.formatMessage({ id: 'scripts.webhook.loading' })}</Text>
         </div>
       ) : webhookInfo ? (
         <>
           <Alert
-            message="使用说明"
+            message={intl.formatMessage({ id: 'scripts.webhook.usage_title' })}
             description={
               <div>
-                <p>• 使用 POST 方法调用此 URL 来触发脚本执行</p>
-                <p>• 签名参数用于验证请求的合法性，防止未授权访问</p>
-                <p>• 脚本将异步执行，webhook 会立即返回响应</p>
+                <p>{intl.formatMessage({ id: 'scripts.webhook.usage_desc1' })}</p>
+                <p>{intl.formatMessage({ id: 'scripts.webhook.usage_desc2' })}</p>
+                <p>{intl.formatMessage({ id: 'scripts.webhook.usage_desc3' })}</p>
               </div>
             }
             type="info"
@@ -109,7 +111,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
           />
 
           <div style={{ marginBottom: 16 }}>
-            <Text strong>Webhook URL：</Text>
+            <Text strong>{intl.formatMessage({ id: 'scripts.webhook.url_label' })}：</Text>
             <Input.Group compact style={{ marginTop: 8 }}>
               <Input
                 value={webhookInfo.webhook_url}
@@ -118,7 +120,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
               />
               <Button
                 icon={<CopyOutlined />}
-                onClick={() => copyToClipboard(webhookInfo.webhook_url, 'Webhook URL')}
+                onClick={() => copyToClipboard(webhookInfo.webhook_url, intl.formatMessage({ id: 'scripts.webhook.copy_url' }))}
               />
             </Input.Group>
           </div>
@@ -126,7 +128,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
           <Divider />
 
           <div style={{ marginBottom: 16 }}>
-            <Text strong>签名参数：</Text>
+            <Text strong>{intl.formatMessage({ id: 'scripts.webhook.signature_label' })}：</Text>
             <Input.Group compact style={{ marginTop: 8 }}>
               <Input
                 value={webhookInfo.signature}
@@ -135,17 +137,17 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
               />
               <Button
                 icon={<CopyOutlined />}
-                onClick={() => copyToClipboard(webhookInfo.signature, '签名')}
+                onClick={() => copyToClipboard(webhookInfo.signature, intl.formatMessage({ id: 'scripts.webhook.copy_signature' }))}
               />
             </Input.Group>
           </div>
 
           <Alert
-            message="调用示例"
+            message={intl.formatMessage({ id: 'scripts.webhook.example_title' })}
             description={
               <div>
                 <Paragraph>
-                  <Text strong>cURL 示例：</Text>
+                  <Text strong>{intl.formatMessage({ id: 'scripts.webhook.curl_example' })}</Text>
                 </Paragraph>
                 <Paragraph
                   code
@@ -162,9 +164,9 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
                 >
                   curl -X POST "{webhookInfo.webhook_url}"
                 </Paragraph>
-                
+
                 <Paragraph>
-                  <Text strong>或者在 Header 中传递签名：</Text>
+                  <Text strong>{intl.formatMessage({ id: 'scripts.webhook.header_example' })}</Text>
                 </Paragraph>
                 <Paragraph
                   code
@@ -189,7 +191,7 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
         </>
       ) : (
         <div style={{ textAlign: 'center', padding: '40px 0' }}>
-          <Text type="secondary">暂无数据</Text>
+          <Text type="secondary">{intl.formatMessage({ id: 'scripts.webhook.no_data' })}</Text>
         </div>
       )}
     </Modal>
