@@ -4,6 +4,19 @@
 
 一个轻量级的 Webhook 管理面板，支持脚本执行、日志记录和系统配置。
 
+## 📸 截图展示
+
+<table>
+  <tr>
+    <td><img src="./screenshot/home.jpeg" alt="首页" width="400"/></td>
+    <td><img src="./screenshot/scripts.jpeg" alt="脚本管理" width="400"/></td>
+  </tr>
+  <tr>
+    <td><img src="./screenshot/scripts1.jpeg" alt="脚本管理 暗色主题" width="400"/></td>
+    <td><img src="./screenshot/home1.jpeg" alt="首页 暗色主题" width="400"/></td>
+  </tr>
+</table>
+
 ## 🚀 快速开始
 
 ### 1. 下载最新版本

@@ -4,20 +4,20 @@
 
 A lightweight Webhook management panel that supports script execution, logging, and system configuration.
 
-## � Screenshots
+## 📸 Screenshots
 
 <table>
   <tr>
-    <td><img src="./screenshot/home.png" alt="Home Page" width="400"/></td>
-    <td><img src="./screenshot/home1.png" alt="Home Page Dark Theme" width="400"/></td>
+    <td><img src="./screenshot/home.jpeg" alt="Home Page" width="400"/></td>
+    <td><img src="./screenshot/scripts.jpeg" alt="Scripts Management" width="400"/></td>
   </tr>
   <tr>
-    <td><img src="./screenshot/scripts.png" alt="Scripts Management" width="400"/></td>
-    <td><img src="./screenshot/scripts1.png" alt="Scripts Management Dark Theme" width="400"/></td>
+    <td><img src="./screenshot/scripts1.jpeg" alt="Scripts Management Dark Theme" width="400"/></td>
+    <td><img src="./screenshot/home1.jpeg" alt="Home Page Dark Theme" width="400"/></td>
   </tr>
 </table>
 
-## �🚀 Quick Start
+## 🚀 Quick Start
 
 ### 1. Download Latest Release
 
