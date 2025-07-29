@@ -1,4 +1,4 @@
-// 执行器配置常量
+// Executor configuration constants
 export interface ExecutorConfig {
   value: string;
   label: string;
@@ -10,7 +10,7 @@ export interface ExecutorConfig {
   defaultTemplate: string;
 }
 
-// 执行器配置列表
+// Executor configuration list
 export const EXECUTOR_CONFIGS: ExecutorConfig[] = [
   {
     value: 'bash',
@@ -22,15 +22,15 @@ export const EXECUTOR_CONFIGS: ExecutorConfig[] = [
     fileExtension: '.sh',
     defaultTemplate: `#!/bin/bash
 
-# Webhook脚本示例 - Bash
-echo "收到webhook请求"
+# Webhook Script Example - Bash
+echo "Webhook request received"
 
-# 获取当前时间
+# Get current time
 current_time=$(date '+%Y-%m-%d %H:%M:%S')
-echo "执行时间: $current_time"
+echo "Execution time: $current_time"
 
-# 在这里编写你的脚本逻辑
-echo "脚本执行完成"`,
+# Write your script logic here
+echo "Script execution completed"`,
   },
   {
     value: 'sh',
@@ -42,15 +42,15 @@ echo "脚本执行完成"`,
     fileExtension: '.sh',
     defaultTemplate: `#!/bin/sh
 
-# Webhook脚本示例 - Shell
-echo "收到webhook请求"
+# Webhook Script Example - Shell
+echo "Webhook request received"
 
-# 获取当前时间
+# Get current time
 current_time=$(date '+%Y-%m-%d %H:%M:%S')
-echo "执行时间: $current_time"
+echo "Execution time: $current_time"
 
-# 在这里编写你的脚本逻辑
-echo "脚本执行完成"`,
+# Write your script logic here
+echo "Script execution completed"`,
   },
   {
     value: 'python',
@@ -64,7 +64,7 @@ echo "脚本执行完成"`,
 # -*- coding: utf-8 -*-
 
 """
-Webhook脚本示例 - Python
+Webhook Script Example - Python
 """
 
 import sys
@@ -72,17 +72,17 @@ import json
 from datetime import datetime
 
 def main():
-    print("收到webhook请求")
-    
-    # 获取当前时间
+    print("Webhook request received")
+
+    # Get current time
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"执行时间: {current_time}")
-    
-    # 获取Python版本
-    print(f"Python版本: {sys.version}")
-    
-    # 在这里编写你的脚本逻辑
-    print("脚本执行完成")
+    print(f"Execution time: {current_time}")
+
+    # Get Python version
+    print(f"Python version: {sys.version}")
+
+    # Write your script logic here
+    print("Script execution completed")
 
 if __name__ == "__main__":
     main()`,
@@ -99,7 +99,7 @@ if __name__ == "__main__":
 # -*- coding: utf-8 -*-
 
 """
-Webhook脚本示例 - Python3
+Webhook Script Example - Python3
 """
 
 import sys
@@ -107,17 +107,17 @@ import json
 from datetime import datetime
 
 def main():
-    print("收到webhook请求")
-    
-    # 获取当前时间
+    print("Webhook request received")
+
+    # Get current time
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f"执行时间: {current_time}")
-    
-    # 获取Python版本
-    print(f"Python版本: {sys.version}")
-    
-    # 在这里编写你的脚本逻辑
-    print("脚本执行完成")
+    print(f"Execution time: {current_time}")
+
+    # Get Python version
+    print(f"Python version: {sys.version}")
+
+    # Write your script logic here
+    print("Script execution completed")
 
 if __name__ == "__main__":
     main()`,
@@ -133,20 +133,20 @@ if __name__ == "__main__":
     defaultTemplate: `#!/usr/bin/env node
 
 /**
- * Webhook脚本示例 - Node.js
+ * Webhook Script Example - Node.js
  */
 
-console.log("收到webhook请求");
+console.log("Webhook request received");
 
-// 获取当前时间
-const currentTime = new Date().toLocaleString('zh-CN');
-console.log(\`执行时间: \${currentTime}\`);
+// Get current time
+const currentTime = new Date().toLocaleString('en-US');
+console.log(\`Execution time: \${currentTime}\`);
 
-// 获取Node.js版本
-console.log(\`Node.js版本: \${process.version}\`);
+// Get Node.js version
+console.log(\`Node.js version: \${process.version}\`);
 
-// 在这里编写你的脚本逻辑
-console.log("脚本执行完成");`,
+// Write your script logic here
+console.log("Script execution completed");`,
   },
   {
     value: 'php',
@@ -158,20 +158,20 @@ console.log("脚本执行完成");`,
     fileExtension: '.php',
     defaultTemplate: `<?php
 /**
- * Webhook脚本示例 - PHP
+ * Webhook Script Example - PHP
  */
 
-echo "收到webhook请求\\n";
+echo "Webhook request received\\n";
 
-// 获取当前时间
+// Get current time
 $currentTime = date('Y-m-d H:i:s');
-echo "执行时间: {$currentTime}\\n";
+echo "Execution time: {$currentTime}\\n";
 
-// 获取PHP版本
-echo "PHP版本: " . phpversion() . "\\n";
+// Get PHP version
+echo "PHP version: " . phpversion() . "\\n";
 
-// 在这里编写你的脚本逻辑
-echo "脚本执行完成\\n";
+// Write your script logic here
+echo "Script execution completed\\n";
 ?>`,
   },
   {
@@ -185,19 +185,19 @@ echo "脚本执行完成\\n";
     defaultTemplate: `#!/usr/bin/env ruby
 # -*- coding: utf-8 -*-
 
-# Webhook脚本示例 - Ruby
+# Webhook Script Example - Ruby
 
-puts "收到webhook请求"
+puts "Webhook request received"
 
-# 获取当前时间
+# Get current time
 current_time = Time.now.strftime('%Y-%m-%d %H:%M:%S')
-puts "执行时间: #{current_time}"
+puts "Execution time: #{current_time}"
 
-# 获取Ruby版本
-puts "Ruby版本: #{RUBY_VERSION}"
+# Get Ruby version
+puts "Ruby version: #{RUBY_VERSION}"
 
-# 在这里编写你的脚本逻辑
-puts "脚本执行完成"`,
+# Write your script logic here
+puts "Script execution completed"`,
   },
   {
     value: 'perl',
@@ -212,19 +212,19 @@ use strict;
 use warnings;
 use POSIX qw(strftime);
 
-# Webhook脚本示例 - Perl
+# Webhook Script Example - Perl
 
-print "收到webhook请求\\n";
+print "Webhook request received\\n";
 
-# 获取当前时间
+# Get current time
 my $current_time = strftime('%Y-%m-%d %H:%M:%S', localtime);
-print "执行时间: $current_time\\n";
+print "Execution time: $current_time\\n";
 
-# 获取Perl版本
-print "Perl版本: $]\\n";
+# Get Perl version
+print "Perl version: $]\\n";
 
-# 在这里编写你的脚本逻辑
-print "脚本执行完成\\n";`,
+# Write your script logic here
+print "Script execution completed\\n";`,
   },
   {
     value: 'go',
@@ -242,19 +242,19 @@ import (
 	"time"
 )
 
-// Webhook脚本示例 - Go
+// Webhook Script Example - Go
 func main() {
-	fmt.Println("收到webhook请求")
+	fmt.Println("Webhook request received")
 
-	// 获取当前时间
+	// Get current time
 	currentTime := time.Now().Format("2006-01-02 15:04:05")
-	fmt.Printf("执行时间: %s\\n", currentTime)
+	fmt.Printf("Execution time: %s\\n", currentTime)
 
-	// 获取Go版本
-	fmt.Printf("Go版本: %s\\n", runtime.Version())
+	// Get Go version
+	fmt.Printf("Go version: %s\\n", runtime.Version())
 
-	// 在这里编写你的脚本逻辑
-	fmt.Println("脚本执行完成")
+	// Write your script logic here
+	fmt.Println("Script execution completed")
 }`,
   },
   {
@@ -269,23 +269,23 @@ func main() {
 import java.time.format.DateTimeFormatter;
 
 /**
- * Webhook脚本示例 - Java
+ * Webhook Script Example - Java
  */
 public class WebhookScript {
     public static void main(String[] args) {
-        System.out.println("收到webhook请求");
-        
-        // 获取当前时间
+        System.out.println("Webhook request received");
+
+        // Get current time
         LocalDateTime now = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         String currentTime = now.format(formatter);
-        System.out.println("执行时间: " + currentTime);
-        
-        // 获取Java版本
-        System.out.println("Java版本: " + System.getProperty("java.version"));
-        
-        // 在这里编写你的脚本逻辑
-        System.out.println("脚本执行完成");
+        System.out.println("Execution time: " + currentTime);
+
+        // Get Java version
+        System.out.println("Java version: " + System.getProperty("java.version"));
+
+        // Write your script logic here
+        System.out.println("Script execution completed");
     }
 }`,
   },
@@ -297,19 +297,19 @@ public class WebhookScript {
     text: 'PowerShell',
     status: 'Processing',
     fileExtension: '.ps1',
-    defaultTemplate: `# Webhook脚本示例 - PowerShell
+    defaultTemplate: `# Webhook Script Example - PowerShell
 
-Write-Host "收到webhook请求"
+Write-Host "Webhook request received"
 
-# 获取当前时间
+# Get current time
 $currentTime = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-Write-Host "执行时间: $currentTime"
+Write-Host "Execution time: $currentTime"
 
-# 获取PowerShell版本
-Write-Host "PowerShell版本: $($PSVersionTable.PSVersion)"
+# Get PowerShell version
+Write-Host "PowerShell version: $($PSVersionTable.PSVersion)"
 
-# 在这里编写你的脚本逻辑
-Write-Host "脚本执行完成"`,
+# Write your script logic here
+Write-Host "Script execution completed"`,
   },
   {
     value: 'cmd',
@@ -320,26 +320,26 @@ Write-Host "脚本执行完成"`,
     status: 'Default',
     fileExtension: '.bat',
     defaultTemplate: `@echo off
-REM Webhook脚本示例 - CMD
+REM Webhook Script Example - CMD
 
-echo 收到webhook请求
+echo Webhook request received
 
-REM 获取当前时间
-echo 执行时间: %date% %time%
+REM Get current time
+echo Execution time: %date% %time%
 
-REM 在这里编写你的脚本逻辑
-echo 脚本执行完成
+REM Write your script logic here
+echo Script execution completed
 
 pause`,
   },
 ];
 
-// 根据值获取执行器配置
+// Get executor configuration by value
 export const getExecutorConfig = (value: string): ExecutorConfig | undefined => {
   return EXECUTOR_CONFIGS.find(config => config.value === value);
 };
 
-// 获取执行器选项（用于表单）
+// Get executor options (for forms)
 export const getExecutorOptions = () => {
   return EXECUTOR_CONFIGS.map(config => ({
     label: config.label,
@@ -347,7 +347,7 @@ export const getExecutorOptions = () => {
   }));
 };
 
-// 获取执行器枚举（用于表格筛选）
+// Get executor value enum (for table filtering)
 export const getExecutorValueEnum = () => {
   const valueEnum: Record<string, { text: string; status: string }> = {};
   EXECUTOR_CONFIGS.forEach(config => {
@@ -359,7 +359,7 @@ export const getExecutorValueEnum = () => {
   return valueEnum;
 };
 
-// 获取执行器渲染配置（用于表格显示）
+// Get executor render configuration (for table display)
 export const getExecutorRenderConfig = () => {
   const renderConfig: Record<string, { icon: string; color: string; text: string }> = {};
   EXECUTOR_CONFIGS.forEach(config => {

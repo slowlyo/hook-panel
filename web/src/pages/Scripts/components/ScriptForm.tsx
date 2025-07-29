@@ -55,9 +55,9 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
   const isDefaultTemplate = (content: string) => {
     if (!content.trim()) return true;
     // Check if contains default template characteristic strings
-    return content.includes('Webhook脚本示例') ||
-           content.includes('在这里编写你的脚本逻辑') ||
-           content.includes('脚本执行完成');
+    return content.includes('Webhook Script Example') ||
+           content.includes('Write your script logic here') ||
+           content.includes('Script execution completed');
   };
 
   // Load script content when in edit mode
@@ -206,13 +206,13 @@ const ScriptForm: React.FC<ScriptFormProps> = ({
           height="300px"
           theme={oneDark}
           placeholder={`#!/bin/bash
-# Webhook脚本示例
-echo "收到webhook请求"
+# Webhook Script Example
+echo "Webhook request received"
 
-# 在这里编写你的脚本逻辑
-# 支持Shell、Python、Node.js等各种脚本语言
+# Write your script logic here
+# Supports Shell, Python, Node.js and other scripting languages
 
-echo "脚本执行完成"`}
+echo "Script execution completed"`}
           basicSetup={{
             lineNumbers: true,
             foldGutter: true,
