@@ -50,8 +50,27 @@ const WebhookModal: React.FC<WebhookModalProps> = ({
   // Copy to clipboard
   const copyToClipboard = async (text: string, label: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      message.success(intl.formatMessage({ id: 'scripts.webhook.copy_success' }, { label }));
+      // 优先使用 Clipboard API
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text);
+        message.success(intl.formatMessage({ id: 'scripts.webhook.copy_success' }, { label }));
+      } else {
+        // 降级方案：使用传统的 execCommand
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        const successful = document.execCommand('copy');
+        document.body.removeChild(textarea);
+        
+        if (successful) {
+          message.success(intl.formatMessage({ id: 'scripts.webhook.copy_success' }, { label }));
+        } else {
+          throw new Error('execCommand failed');
+        }
+      }
     } catch (error) {
       console.error(intl.formatMessage({ id: 'scripts.webhook.copy_failed' }), error);
       message.error(intl.formatMessage({ id: 'scripts.webhook.copy_failed' }));
