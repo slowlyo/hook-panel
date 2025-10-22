@@ -25,13 +25,15 @@
 
 **Linux x64:**
 ```bash
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64.tar.gz && tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
+curl -L https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-amd64.tar.gz | tar -xz
 ```
 
 **Linux ARM64:**
 ```bash
-curl -L -o hook-panel.tar.gz https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz && tar -xzf hook-panel.tar.gz && rm hook-panel.tar.gz
+curl -L https://github.com/slowlyo/hook-panel/releases/latest/download/hook-panel-linux-arm64.tar.gz | tar -xz
 ```
+
+> 💡 **提示**: 如果需要 sudo 权限，只需在开头添加一次：`sudo curl -L ... | tar -xz`
 
 #### 手动下载
 
