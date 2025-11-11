@@ -170,6 +170,22 @@ func (e *ScriptExecutor) runCommand(cmd *exec.Cmd, scriptID string) (*ExecutionR
 	// 继承当前进程的环境变量
 	cmd.Env = os.Environ()
 
+	// 确保HOME环境变量被设置
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		homeDir = os.Getenv("HOME")
+		if homeDir == "" {
+			homeDir = "/root" // 默认fallback
+		}
+	}
+
+	// 添加必要的环境变量
+	cmd.Env = append(cmd.Env,
+		"HOME="+homeDir,         // 确保HOME变量存在
+		"GIT_TERMINAL_PROMPT=0", // 禁止Git提示输入凭据
+		"GIT_ASKPASS=true",      // 设置空的askpass程序
+	)
+
 	// 创建管道捕获输出
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
