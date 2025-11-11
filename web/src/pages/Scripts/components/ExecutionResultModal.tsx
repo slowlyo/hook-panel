@@ -4,6 +4,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, CopyOutlined } from '@ant-des
 import { useIntl } from '@umijs/max';
 import { ExecutionResult } from '@/services/scripts';
 import OutputDisplay from '@/components/OutputDisplay';
+import { copyToClipboard } from '@/utils/clipboard';
 import './ExecutionResultModal.less';
 
 interface ExecutionResultModalProps {
@@ -23,12 +24,13 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
 
   if (!result) return null;
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).then(() => {
+  const handleCopy = async (text: string) => {
+    const success = await copyToClipboard(text);
+    if (success) {
       message.success(intl.formatMessage({ id: 'scripts.execution.copy_success' }));
-    }).catch(() => {
+    } else {
       message.error(intl.formatMessage({ id: 'scripts.execution.copy_failed' }));
-    });
+    }
   };
 
   const getStatusIcon = () => {
@@ -90,7 +92,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               type="text"
               size="small"
               icon={<CopyOutlined />}
-              onClick={() => copyToClipboard(result.output)}
+              onClick={() => handleCopy(result.output)}
               className="copyButton"
             >
               {intl.formatMessage({ id: 'scripts.execution.copy' })}
@@ -120,7 +122,7 @@ const ExecutionResultModal: React.FC<ExecutionResultModalProps> = ({
               type="text"
               size="small"
               icon={<CopyOutlined />}
-              onClick={() => copyToClipboard(result.error)}
+              onClick={() => handleCopy(result.error)}
               className="copyButton"
             >
               {intl.formatMessage({ id: 'scripts.execution.copy' })}
