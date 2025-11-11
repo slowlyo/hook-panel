@@ -170,11 +170,6 @@ func (e *ScriptExecutor) runCommand(cmd *exec.Cmd, scriptID string) (*ExecutionR
 	// 继承当前进程的环境变量
 	cmd.Env = os.Environ()
 
-	// 设置工作目录为用户的HOME目录，确保Git等工具能访问配置文件
-	if homeDir, err := os.UserHomeDir(); err == nil {
-		cmd.Dir = homeDir
-	}
-
 	// 创建管道捕获输出
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {

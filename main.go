@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"hook-panel/internal/handlers"
 	"hook-panel/internal/middleware"
@@ -60,6 +61,9 @@ func setupStaticFiles(r *gin.Engine) {
 			// 设置正确的Content-Type
 			contentType := getContentType(filePath)
 			c.Header("Content-Type", contentType)
+
+			// 设置缓存头
+			setCacheHeaders(c, filePath)
 
 			if stat, err := file.Stat(); err == nil {
 				c.DataFromReader(http.StatusOK, stat.Size(), contentType, file, nil)
@@ -122,6 +126,73 @@ func getContentType(filePath string) string {
 	default:
 		return "application/octet-stream"
 	}
+}
+
+// setCacheHeaders 根据文件类型设置缓存策略
+func setCacheHeaders(c *gin.Context, filePath string) {
+	// HTML 文件不缓存，确保用户总是获取最新页面
+	if strings.HasSuffix(filePath, ".html") {
+		c.Header("Cache-Control", "no-cache, no-store, must-revalidate")
+		c.Header("Pragma", "no-cache")
+		c.Header("Expires", "0")
+		return
+	}
+
+	// 检查是否是带 hash 的资源文件（通常包含 8 位以上的十六进制字符）
+	// 例如: app.a1b2c3d4.js, style.12345678.css
+	isHashedFile := false
+	fileName := filePath
+	if lastSlash := strings.LastIndex(filePath, "/"); lastSlash != -1 {
+		fileName = filePath[lastSlash+1:]
+	}
+
+	// 简单判断：如果文件名中包含类似 hash 的模式
+	if strings.Contains(fileName, ".") {
+		parts := strings.Split(fileName, ".")
+		for i := 1; i < len(parts)-1; i++ {
+			if len(parts[i]) >= 8 && isHexString(parts[i]) {
+				isHashedFile = true
+				break
+			}
+		}
+	}
+
+	// 对于带 hash 的资源文件，设置长期缓存（1年）
+	if isHashedFile {
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		return
+	}
+
+	// 对于 JS、CSS 等静态资源，设置较短的缓存（1小时）
+	if strings.HasSuffix(filePath, ".js") || strings.HasSuffix(filePath, ".css") {
+		c.Header("Cache-Control", "public, max-age=3600")
+		return
+	}
+
+	// 对于图片等静态资源，设置中等缓存（1天）
+	if strings.HasSuffix(filePath, ".png") || strings.HasSuffix(filePath, ".jpg") ||
+		strings.HasSuffix(filePath, ".jpeg") || strings.HasSuffix(filePath, ".gif") ||
+		strings.HasSuffix(filePath, ".svg") || strings.HasSuffix(filePath, ".ico") ||
+		strings.HasSuffix(filePath, ".webp") {
+		c.Header("Cache-Control", "public, max-age=86400")
+		return
+	}
+
+	// 其他文件默认缓存1小时
+	c.Header("Cache-Control", "public, max-age=3600")
+}
+
+// isHexString 检查字符串是否为十六进制
+func isHexString(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	for _, c := range s {
+		if !((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')) {
+			return false
+		}
+	}
+	return true
 }
 
 func main() {
